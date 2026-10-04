@@ -1,13 +1,16 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"github.com/truongbo17/go-gin-boilerplate/config"
 	"github.com/truongbo17/go-gin-boilerplate/internal/infra/logger"
+	"net"
 	"time"
 
+	mysqldriver "github.com/go-sql-driver/mysql"
 	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
-	"gorm.io/driver/mysql"
+	gormmysql "gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
 	gormLogger "gorm.io/gorm/logger"
@@ -18,13 +21,13 @@ var DB *gorm.DB
 func ConnectMaster() {
 	configDB := config.EnvConfig.Master
 	if configDB.Username != "" {
-		address := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true",
-			configDB.Username,
-			configDB.Password,
-			configDB.Host,
-			configDB.Port,
-			configDB.Database,
-		)
+		dsn := (&mysqldriver.Config{
+			User: configDB.Username, Passwd: configDB.Password,
+			Net: "tcp", Addr: net.JoinHostPort(configDB.Host, configDB.Port),
+			DBName: configDB.Database, ParseTime: true, Loc: time.Local,
+			InterpolateParams: true, Params: map[string]string{"charset": "utf8mb4"},
+			Timeout: 3 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second,
+		}).FormatDSN()
 
 		configMysql := &gorm.Config{
 			SkipDefaultTransaction: true,
@@ -39,21 +42,30 @@ func ConnectMaster() {
 					SlowThreshold:             time.Second,
 					LogLevel:                  gormLogger.Info,
 					IgnoreRecordNotFoundError: true,
+					ParameterizedQueries:      true,
 					Colorful:                  false,
 				},
 			)
 		}
 
-		db, err := gorm.Open(mysql.Open(address), configMysql)
+		db, err := gorm.Open(gormmysql.Open(dsn), configMysql)
 		if err != nil {
-			panic("Connected failed, check your MySql")
+			panic(fmt.Errorf("connect MySQL: %w", err))
 		}
 
-		dbConfig, _ := db.DB()
+		dbConfig, err := db.DB()
+		if err != nil {
+			panic(fmt.Errorf("get MySQL connection pool: %w", err))
+		}
 		dbConfig.SetMaxOpenConns(30)
 		dbConfig.SetMaxIdleConns(15)
 		dbConfig.SetConnMaxLifetime(15 * time.Minute)
 		dbConfig.SetConnMaxIdleTime(5 * time.Minute)
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		if err := dbConfig.PingContext(ctx); err != nil {
+			panic(fmt.Errorf("ping MySQL: %w", err))
+		}
 
 		if err = db.Use(otelgorm.NewPlugin()); err != nil {
 			panic(err)

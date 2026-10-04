@@ -1,5 +1,13 @@
 package main
 
-import "github.com/truongbo17/go-gin-boilerplate/cmd"
+import (
+	"os"
 
-func main() { cmd.Execute() }
+	"github.com/truongbo17/go-gin-boilerplate/cmd"
+)
+
+func main() {
+	if err := cmd.Execute(); err != nil {
+		os.Exit(1)
+	}
+}

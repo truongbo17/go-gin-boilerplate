@@ -223,6 +223,12 @@ func (r *BaseRepository[T]) Paginate(ctx context.Context, params *PaginateParams
 	if params.PerPage <= 0 {
 		params.PerPage = 20
 	}
+	if params.PerPage > 100 {
+		params.PerPage = 100
+	}
+	if params.Page > 10000 {
+		return nil, errors.New("page exceeds supported range")
+	}
 
 	path := config.EnvConfig.App.Url + params.Path
 

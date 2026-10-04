@@ -2,6 +2,7 @@ package requests
 
 import (
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 type ListUserRequest struct {
@@ -18,8 +19,15 @@ func ListUserValidator() gin.HandlerFunc {
 		if req.Page <= 0 {
 			req.Page = 1
 		}
+		if req.Page > 10000 {
+			ctx.AbortWithStatus(http.StatusUnprocessableEntity)
+			return
+		}
 		if req.PerPage <= 0 {
 			req.PerPage = 20
+		}
+		if req.PerPage > 100 {
+			req.PerPage = 100
 		}
 
 		ctx.Set("ListUserRequest", req)

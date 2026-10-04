@@ -124,7 +124,5 @@ func errorHandler(ctx context.Context, task *asynq.Task, err error) {
 	}
 
 	logApp := logger.LogrusLogger
-	logApp.Errorf("Job error: task=%q, payload=%q error=%v", task.Type(), task.Payload(), err)
-
-	logger.LogrusLogger.Errorf("Job failed: type=%q error=%v", task.Type(), err)
+	logApp.Errorf("Job failed: type=%q error=%v", task.Type(), err)
 }

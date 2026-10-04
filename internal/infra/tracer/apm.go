@@ -40,7 +40,7 @@ func InitTracerOTEL() {
 		attribute.String("deployment.environment", configTracer.Environment),
 	)
 
-	sampler := trace.WithSampler(trace.AlwaysSample())
+	sampler := trace.WithSampler(trace.ParentBased(trace.TraceIDRatioBased(configTracer.SampleRatio)))
 
 	tp := trace.NewTracerProvider(
 		sampler,
@@ -61,6 +61,6 @@ func DownAMPTracerProvider() {
 		return
 	}
 	if err := AMPTracerProvider.Shutdown(context.Background()); err != nil {
-		log.Fatal("Failed to shutdown TracerProvider: ", err)
+		log.Printf("Failed to shutdown TracerProvider: %v", err)
 	}
 }

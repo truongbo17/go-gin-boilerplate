@@ -17,7 +17,7 @@ func Init() {
 	if config.EnvConfig.Tracer.Enable {
 		Router.Use(otelgin.Middleware(config.EnvConfig.Tracer.APM.ServiceName))
 	}
-	Router.Use(middlewares.RequestID(), middlewares.RequestLang(), middlewares.RequestLogger(), middlewares.Cors(), middlewares.RateInternalLimit())
+	Router.Use(middlewares.SecurityHeaders(), middlewares.LimitRequestBody(), middlewares.RequestID(), middlewares.RequestLang(), middlewares.RequestLogger(), middlewares.Cors(), middlewares.RateInternalLimit())
 	LoadPublic(Router)
 	api := Router.Group("/api")
 	auth.LoadAuthV1(api)

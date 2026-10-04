@@ -12,7 +12,6 @@ import (
 	"github.com/truongbo17/go-gin-boilerplate/internal/infra/redis"
 	"github.com/truongbo17/go-gin-boilerplate/internal/infra/tracer"
 	"github.com/truongbo17/go-gin-boilerplate/internal/infra/worker/client"
-	"os"
 )
 
 var rootCmd = &cobra.Command{
@@ -43,14 +42,20 @@ func init() {
 	rootCmd.AddCommand(StartServerCmd, StartWorkerCmd, cli.VersionCmd, cli.MigrateCmd, cli.CreateUserCmd)
 }
 
-func Execute() {
+func Execute() error {
 	defer func() {
 		if client.WorkerClient != nil {
 			_ = client.WorkerClient.Close()
 		}
+		if redis.ClientRedis != nil {
+			_ = redis.ClientRedis.Close()
+		}
+		if database.DB != nil {
+			if pool, err := database.DB.DB(); err == nil {
+				_ = pool.Close()
+			}
+		}
 		tracer.DownAMPTracerProvider()
 	}()
-	if err := rootCmd.Execute(); err != nil {
-		os.Exit(1)
-	}
+	return rootCmd.Execute()
 }

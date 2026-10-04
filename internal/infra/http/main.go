@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"context"
+	"errors"
 	json "github.com/json-iterator/go"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"io"
@@ -26,6 +27,10 @@ type BaseRequest struct {
 	Client *http.Client
 }
 
+const maxResponseBytes = 8 << 20
+
+var ErrResponseTooLarge = errors.New("HTTP response exceeds 8 MiB")
+
 func (r *BaseRequest) Do(ctx context.Context, method, urlStr string, headers map[string]string, body interface{}) (*http.Response, []byte, error) {
 	var requestBody []byte
 	var err error
@@ -44,6 +49,9 @@ func (r *BaseRequest) Do(ctx context.Context, method, urlStr string, headers map
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}
+	if body != nil && req.Header.Get("Content-Type") == "" {
+		req.Header.Set("Content-Type", "application/json")
+	}
 
 	resp, err := r.Client.Do(req)
 	if err != nil {
@@ -51,9 +59,12 @@ func (r *BaseRequest) Do(ctx context.Context, method, urlStr string, headers map
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes+1))
 	if err != nil {
 		return resp, nil, err
+	}
+	if len(respBody) > maxResponseBytes {
+		return resp, nil, ErrResponseTooLarge
 	}
 
 	return resp, respBody, nil

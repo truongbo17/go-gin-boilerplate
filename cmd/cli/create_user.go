@@ -2,7 +2,10 @@ package cli
 
 import (
 	"errors"
+	"io"
 	"net/mail"
+	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/enums"
@@ -15,10 +18,10 @@ import (
 func init() {
 	CreateUserCmd.Flags().StringP("username", "u", "", "username")
 	CreateUserCmd.Flags().StringP("password", "p", "", "password")
+	CreateUserCmd.Flags().Bool("password-stdin", false, "read password from standard input")
 	CreateUserCmd.Flags().StringP("email", "e", "", "email")
 	CreateUserCmd.Flags().Bool("admin", false, "grant the admin role for initial setup")
 	_ = CreateUserCmd.MarkFlagRequired("username")
-	_ = CreateUserCmd.MarkFlagRequired("password")
 	_ = CreateUserCmd.MarkFlagRequired("email")
 }
 
@@ -28,6 +31,17 @@ var CreateUserCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		username, _ := cmd.Flags().GetString("username")
 		password, _ := cmd.Flags().GetString("password")
+		fromStdin, _ := cmd.Flags().GetBool("password-stdin")
+		if fromStdin {
+			if password != "" {
+				return errors.New("use either --password or --password-stdin")
+			}
+			input, err := io.ReadAll(io.LimitReader(os.Stdin, 1025))
+			if err != nil || len(input) > 1024 {
+				return errors.New("cannot read password from standard input")
+			}
+			password = strings.TrimRight(string(input), "\r\n")
+		}
 		email, _ := cmd.Flags().GetString("email")
 		admin, _ := cmd.Flags().GetBool("admin")
 		if username == "" || email == "" || len(password) < 8 {

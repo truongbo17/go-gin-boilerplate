@@ -1,8 +1,9 @@
 package config
 
 type Tracer struct {
-	Enable bool `mapstructure:"TRACER_ENABLE"`
-	APM    `mapstructure:",squash"`
+	Enable      bool    `mapstructure:"TRACER_ENABLE"`
+	SampleRatio float64 `mapstructure:"TRACER_SAMPLE_RATIO"`
+	APM         `mapstructure:",squash"`
 }
 
 type APM struct {

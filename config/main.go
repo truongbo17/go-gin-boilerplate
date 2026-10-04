@@ -1,10 +1,12 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/spf13/viper"
+	"os"
 )
 
 type Config struct {
@@ -26,7 +28,7 @@ const (
 )
 
 func (config *Config) validate() error {
-	return validation.ValidateStruct(config,
+	err := validation.ValidateStruct(config,
 		// App
 		validation.Field(&config.App.Port, is.Port),
 		validation.Field(&config.App.Env, validation.In(DebugMode, ReleaseMode, LocalMode)),
@@ -35,19 +37,28 @@ func (config *Config) validate() error {
 		validation.Field(&config.Cors.AllowOrigin),
 
 		// Database
-		validation.Field(&config.Database.Master.Port, is.Port),
-		validation.Field(&config.Database.Master.Host, is.Host),
+		validation.Field(&config.Database.Master.Port, validation.Required, is.Port),
+		validation.Field(&config.Database.Master.Host, validation.Required, is.Host),
+		validation.Field(&config.Database.Master.Username, validation.Required),
+		validation.Field(&config.Database.Master.Database, validation.Required),
 
 		// Cache
 		validation.Field(&config.Cache.CacheStore, validation.In(CacheStoreLocal, CacheStoreRedis)),
 
-		// Redis
-		validation.Field(&config.Cache.RedisPort, is.Port),
-		validation.Field(&config.Cache.RedisHost, is.Host),
-
 		// Auth
 		validation.Field(&config.Auth.JWTSecretKey, validation.Required, validation.Length(32, 0)),
+		validation.Field(&config.Tracer.SampleRatio, validation.Min(0.0), validation.Max(1.0)),
 	)
+	if err != nil {
+		return err
+	}
+	if config.Cache.CacheStore == CacheStoreRedis {
+		return validation.ValidateStruct(config,
+			validation.Field(&config.Cache.RedisHost, validation.Required, is.Host),
+			validation.Field(&config.Cache.RedisPort, validation.Required, is.Port),
+		)
+	}
+	return nil
 }
 
 var EnvConfig *Config
@@ -65,11 +76,22 @@ func setupConfig() *Config {
 	viper.SetDefault("JWT_REFRESH_EXPIRATION_DAYS", 30)
 
 	viper.SetDefault("TRACER_ENABLE", "false")
+	viper.SetDefault("TRACER_SAMPLE_RATIO", 0.1)
 	viper.SetDefault("ELASTIC_APM_ENVIRONMENT", "staging")
+	for _, key := range []string{
+		"APP_NAME", "APP_URL", "DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_DATABASE",
+		"REDIS_HOST", "REDIS_PORT", "REDIS_USERNAME", "REDIS_PASSWORD", "JWT_SECRET",
+		"ELASTIC_APM_SERVER_URL", "ELASTIC_APM_SECRET_TOKEN", "ELASTIC_APM_SERVICE_NAME",
+		"ELASTIC_APM_GLOBAL_LABELS",
+	} {
+		if err := viper.BindEnv(key); err != nil {
+			panic(err)
+		}
+	}
 
 	viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err != nil {
+	if err := viper.ReadInConfig(); err != nil && !errors.Is(err, os.ErrNotExist) {
 		panic(fmt.Errorf("fatal error config file: %w", err))
 	}
 

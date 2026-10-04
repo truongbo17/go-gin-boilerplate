@@ -22,6 +22,7 @@ func (a ListPermissionRequest) Validate(lang string) error {
 		),
 		validation.Field(&a.Page,
 			validation.Min(0).Error(i18n.GetMessage(lang, "validation.min", map[string]string{"min": "0"})),
+			validation.Max(10000),
 		),
 		validation.Field(&a.Search,
 			validation.Length(0, 100).Error(i18n.GetMessage(lang, "validation.length", map[string]string{"min": "0", "max": "100"})),
