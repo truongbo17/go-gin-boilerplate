@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/truongbo17/go-gin-boilerplate/config"
-	"go.elastic.co/apm/v2"
-	"go.elastic.co/apm/v2/transport"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
@@ -14,50 +12,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/semconv/v1.30.0"
 	"log"
-	"net/url"
-	"os"
-	"time"
 )
-
-func IniTracerAPMConfig() {
-	configTracer := config.EnvConfig.Tracer.APM
-
-	_ = os.Setenv("ELASTIC_APM_SERVER_URL", configTracer.Url)
-	_ = os.Setenv("ELASTIC_APM_SECRET_TOKEN", configTracer.SecretKey)
-	_ = os.Setenv("ELASTIC_APM_SERVICE_NAME", configTracer.ServiceName)
-	_ = os.Setenv("ELASTIC_APM_ACTIVE", "true")
-}
-
-var APMTracer *apm.Tracer
-
-func InitTracer() *apm.Tracer {
-	configTracer := config.EnvConfig.Tracer
-
-	serverUrl, _ := url.Parse(configTracer.APM.Url)
-	tr, err := transport.NewHTTPTransport(transport.HTTPTransportOptions{
-		ServerURLs:    []*url.URL{serverUrl},
-		SecretToken:   configTracer.APM.SecretKey,
-		ServerTimeout: 30 * time.Second,
-	})
-	if err != nil {
-		log.Fatalf("Error init tracer APM with HTTP Transport: %v", err)
-	}
-
-	tracer, err := apm.NewTracerOptions(apm.TracerOptions{
-		ServiceName:    configTracer.APM.ServiceName,
-		ServiceVersion: "1.0.0",
-		Transport:      tr,
-	})
-
-	if err != nil {
-		log.Fatalf("Error init Tracer APM: %v", err)
-	}
-
-	log.Println("Successfully init tracer APM!")
-	APMTracer = tracer
-
-	return tracer
-}
 
 var AMPTracerProvider *trace.TracerProvider
 
@@ -68,7 +23,6 @@ func InitTracerOTEL() {
 		return
 	}
 	ctx := context.Background()
-	IniTracerAPMConfig()
 
 	exporter, err := otlptracehttp.New(ctx,
 		otlptracehttp.WithEndpoint(configTracer.Url),

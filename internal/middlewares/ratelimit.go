@@ -7,15 +7,6 @@ import (
 	"time"
 )
 
-func RateGlobalLimit() gin.HandlerFunc {
-	rate := limiter.Rate{
-		Period: 1 * time.Hour,
-		Limit:  1000,
-	}
-
-	return core.Limit(rate)
-}
-
 func RateInternalLimit() gin.HandlerFunc {
 	rate := limiter.Rate{
 		Period: 1 * time.Second,
@@ -32,8 +23,4 @@ func RateLimitPublic() gin.HandlerFunc {
 	}
 
 	return core.Limit(rate)
-}
-
-func RateLimitGraphQL() gin.HandlerFunc {
-	return core.Limit(limiter.Rate{Period: 1 * time.Minute, Limit: 1000})
 }
