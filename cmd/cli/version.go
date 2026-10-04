@@ -10,6 +10,6 @@ var VersionCmd = &cobra.Command{
 	Short:   "Get the version of Go Gin Base",
 	Example: "ggb version",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Go-Gin-Base version: v0.0.1")
+		fmt.Println("version 0.0.1")
 	},
 }

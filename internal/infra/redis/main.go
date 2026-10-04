@@ -3,36 +3,32 @@ package redis
 import (
 	"context"
 	"fmt"
+	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
-	"go-base/config"
-	"go-base/internal/infra/logger"
+	"github.com/truongbo17/go-gin-boilerplate/config"
 )
 
 var ClientRedis *redis.Client
 
-func ConnectRedis() *redis.Client {
-	EnvConfig := config.EnvConfig
-	configRedis := EnvConfig.CacheConfig
-
-	if configRedis.RedisHost != "" {
-		logApp := logger.LogrusLogger
-
+func ConnectRedis() {
+	cacheConfig := config.EnvConfig.Cache
+	if cacheConfig.RedisHost != "" {
 		redisClient := redis.NewClient(&redis.Options{
-			Addr:     fmt.Sprintf("%s:%s", configRedis.RedisHost, configRedis.RedisPort),
-			Username: configRedis.RedisUsername,
-			Password: configRedis.RedisPassword,
+			Addr:     fmt.Sprintf("%s:%s", cacheConfig.RedisHost, cacheConfig.RedisPort),
+			Username: cacheConfig.RedisUsername,
+			Password: cacheConfig.RedisPassword,
 		})
+
+		if err := redisotel.InstrumentTracing(redisClient); err != nil {
+			panic(err)
+		}
 
 		ClientRedis = redisClient
 
 		checkRedisConnection(redisClient)
 
-		logApp.Infoln("Success connect to Redis.")
-
-		return redisClient
+		fmt.Println("Success connect to Redis.")
 	}
-
-	return nil
 }
 
 func checkRedisConnection(client *redis.Client) {

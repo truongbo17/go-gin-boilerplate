@@ -3,22 +3,37 @@ package logger
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"go-base/config"
+	"github.com/truongbo17/go-gin-boilerplate/config"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"io"
 	"os"
 	"time"
 )
 
-func InitLogrusLogger() *logrus.Logger {
+type Formatter struct{}
+
+func (f *Formatter) Format(entry *logrus.Entry) ([]byte, error) {
+	logLine := fmt.Sprintf("[%s] %s.%s: %s",
+		entry.Time.Format(time.DateTime),
+		config.EnvConfig.Env,
+		entry.Level.String(),
+		entry.Message,
+	)
+
+	if len(entry.Data) > 0 {
+		logLine += fmt.Sprintf(" fields=%v", entry.Data)
+	}
+
+	logLine += "\n"
+	return []byte(logLine), nil
+}
+
+func InitLog() *logrus.Logger {
 	logger := logrus.New()
 	currentDate := time.Now()
 
 	logger.SetLevel(logrus.TraceLevel)
-	logger.SetFormatter(&logrus.TextFormatter{
-		TimestampFormat: time.DateTime,
-		DisableQuote:    true,
-	})
+	logger.SetFormatter(&Formatter{})
 
 	logFile := &lumberjack.Logger{
 		Filename: fmt.Sprintf(config.PathLog, currentDate.Format(time.DateOnly)),
@@ -26,10 +41,14 @@ func InitLogrusLogger() *logrus.Logger {
 		Compress: false,
 	}
 
-	writers := []io.Writer{logFile, os.Stdout}
+	writers := []io.Writer{logFile}
+	if config.EnvConfig.Env != config.ReleaseMode {
+		writers = append(writers, os.Stdout)
+	}
+
 	logger.SetOutput(io.MultiWriter(writers...))
 
-	logger.Infoln("Success init logger with Logrus")
+	fmt.Println("Success init logger with Logrus")
 
 	return logger
 }

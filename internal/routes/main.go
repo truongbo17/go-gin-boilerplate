@@ -2,28 +2,24 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-base/config"
-	"go-base/internal/app/auth/routers"
-	"go-base/internal/middlewares"
+	"github.com/truongbo17/go-gin-boilerplate/config"
+	"github.com/truongbo17/go-gin-boilerplate/internal/app/v1/auth"
+	"github.com/truongbo17/go-gin-boilerplate/internal/middlewares"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 var Router *gin.Engine
 
-func Init(appEnv string) {
-	Router = gin.Default()
-	Router.ForwardedByClientIP = true
-
-	Router.Use(middlewares.RequestID())
-	Router.Use(middlewares.RequestLogger())
-	Router.Use(middlewares.ErrorHandle())
-	Router.Use(middlewares.Cors())
-	Router.Use(middlewares.RateGlobalLimit())
-
-	LoadPublicRouter(Router)
-
-	routers.LoadAuthModuleRouter(Router)
-
-	if appEnv == config.DebugMode {
-		LoadSwaggerRouter(Router)
+func Init() {
+	Router = gin.New()
+	_ = Router.SetTrustedProxies(nil)
+	Router.Use(gin.Recovery())
+	if config.EnvConfig.Tracer.Enable {
+		Router.Use(otelgin.Middleware(config.EnvConfig.Tracer.APM.ServiceName))
 	}
+	Router.Use(middlewares.RequestID(), middlewares.RequestLang(), middlewares.RequestLogger(), middlewares.Cors(), middlewares.RateInternalLimit())
+	LoadPublic(Router)
+	api := Router.Group("/api")
+	auth.LoadAuthV1(api)
+	auth.LoadRBACV1(api)
 }

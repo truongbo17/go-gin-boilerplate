@@ -1,5 +1,5 @@
 package config
 
-type CorsConfig struct {
+type Cors struct {
 	AllowOrigin string `mapstructure:"CORS_ALLOW_ORIGIN"`
 }

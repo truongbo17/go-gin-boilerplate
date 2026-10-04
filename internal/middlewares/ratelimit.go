@@ -2,8 +2,8 @@ package middlewares
 
 import (
 	"github.com/gin-gonic/gin"
+	core "github.com/truongbo17/go-gin-boilerplate/internal/infra/limiter"
 	"github.com/ulule/limiter/v3"
-	limiter2 "go-base/internal/infra/limiter"
 	"time"
 )
 
@@ -13,7 +13,16 @@ func RateGlobalLimit() gin.HandlerFunc {
 		Limit:  1000,
 	}
 
-	return limiter2.Limit(rate)
+	return core.Limit(rate)
+}
+
+func RateInternalLimit() gin.HandlerFunc {
+	rate := limiter.Rate{
+		Period: 1 * time.Second,
+		Limit:  1000,
+	}
+
+	return core.Limit(rate)
 }
 
 func RateLimitPublic() gin.HandlerFunc {
@@ -22,32 +31,9 @@ func RateLimitPublic() gin.HandlerFunc {
 		Limit:  100,
 	}
 
-	return limiter2.Limit(rate)
+	return core.Limit(rate)
 }
 
-func RateLoginPublic() gin.HandlerFunc {
-	rate := limiter.Rate{
-		Period: 1 * time.Hour,
-		Limit:  5,
-	}
-
-	return limiter2.Limit(rate)
-}
-
-func RateRegisterPublic() gin.HandlerFunc {
-	rate := limiter.Rate{
-		Period: 1 * time.Hour * 24 * 7,
-		Limit:  311,
-	}
-
-	return limiter2.Limit(rate)
-}
-
-func RateRefreshPublic() gin.HandlerFunc {
-	rate := limiter.Rate{
-		Period: 1 * time.Hour * 24 * 7,
-		Limit:  1,
-	}
-
-	return limiter2.Limit(rate)
+func RateLimitGraphQL() gin.HandlerFunc {
+	return core.Limit(limiter.Rate{Period: 1 * time.Minute, Limit: 1000})
 }
