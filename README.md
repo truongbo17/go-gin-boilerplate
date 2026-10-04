@@ -50,10 +50,10 @@ The app runs on your host, so keep `DB_HOST=127.0.0.1` and `DB_PORT=3306` in `.e
 
 ### Live reload with Air
 
-The project targets Go 1.23.4. Install a compatible Air release and put the Go binary directory on your `PATH`:
+The project targets Go 1.26.8. Install Air and put the Go binary directory on your `PATH`:
 
 ```sh
-go install github.com/air-verse/air@v1.61.7
+go install github.com/air-verse/air@v1.67.4
 export PATH="$(go env GOPATH)/bin:$PATH"
 ```
 
@@ -85,6 +85,7 @@ The `admin` role is reserved for trusted CLI setup. API clients cannot create, r
 make test
 make vet
 make build
+go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
 ./build/ggb server
 ```
 
@@ -102,9 +103,10 @@ make build
 | `internal/infra/logger`, `tracer`, `i18n` | Logging, telemetry, and messages |
 
 Add application-specific adapters under `internal/infra/` when an actual integration needs them; keep business rules in `internal/app/core/`. `/ping` checks the HTTP process, while `/ready` returns 503 if MySQL or configured Redis is unavailable.
+
 When tracing is enabled, `TRACER_SAMPLE_RATIO` controls the share of new traces sampled (default `0.1`).
 
-The Docker Compose file under `deployments/` starts MySQL and Redis for development. Copy `.env.example` to `.env` and set secrets before using it. GitHub Actions runs tests, vet, build, a source check, and CodeQL; Dependabot opens dependency update PRs and security alerts are enabled.
+The Docker Compose file under `deployments/` starts MySQL and Redis for development. Copy `.env.example` to `.env` and set secrets before using it. GitHub Actions runs tests, vet, build, a source check, govulncheck, and CodeQL; Dependabot opens dependency update PRs and security alerts are enabled.
 
 ## Security defaults
 
