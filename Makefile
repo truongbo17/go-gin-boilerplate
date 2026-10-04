@@ -1,33 +1,16 @@
-.PHONY: build
-# build the binary
+.PHONY: build test vet fmt tidy
+
 build:
-	go build -v -o build/ggb main.go
+	go build -o build/ggb .
 
-.PHONY: format
-# Run go fmt against code
-format:
-	go fmt ./...
+test:
+	go test ./...
 
-.PHONY: fmt
-# fmt is an alias for format
-fmt: format
+vet:
+	go vet ./...
 
-.PHONY: cache
-# clean cache
-clean:
-	rm -rf build/ggb
+fmt:
+	gofmt -w $$(find . -name '*.go' -not -path './vendor/*')
 
-.PHONY: swagger
-# swagger docs generation
-swagger:
-	swag init
-
-.PHONY: tidy
-# tidy the go modules
 tidy:
 	go mod tidy
-
-.PHONY: download
-# install package
-download:
-	go mod download
