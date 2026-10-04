@@ -7,26 +7,40 @@ import (
 	"time"
 )
 
-type RedisCache struct {
+type Redis struct {
 	client *redis.Client
 }
 
-func NewRedisCache(client *redis.Client) *RedisCache {
-	return &RedisCache{client: client}
+func NewRedis(client *redis.Client) *Redis {
+	return &Redis{client: client}
 }
 
-func (r *RedisCache) Set(key string, value interface{}, ttl time.Duration) error {
-	return r.client.Set(context.Background(), key, value, ttl).Err()
+func (r *Redis) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+	return r.client.Set(ctx, key, value, ttl).Err()
 }
 
-func (r *RedisCache) Get(key string) (interface{}, error) {
-	val, err := r.client.Get(context.Background(), key).Result()
+func (r *Redis) Get(ctx context.Context, key string) (interface{}, error) {
+	val, err := r.client.Get(ctx, key).Result()
 	if errors.Is(err, redis.Nil) {
 		return nil, nil
 	}
 	return val, err
 }
 
-func (r *RedisCache) Delete(key string) error {
-	return r.client.Del(context.Background(), key).Err()
+func (r *Redis) Delete(ctx context.Context, key string) error {
+	return r.client.Del(ctx, key).Err()
+}
+
+func (r *Redis) Increment(ctx context.Context, key string, ttl time.Duration) (int64, error) {
+	timeValue, err := r.client.Incr(ctx, key).Result()
+	if err != nil {
+		return 0, err
+	}
+
+	err = r.client.Expire(ctx, key, ttl).Err()
+	if err != nil {
+		return 0, err
+	}
+
+	return timeValue, nil
 }

@@ -3,25 +3,30 @@ package http
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	json "github.com/json-iterator/go"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 )
+
+var Request *BaseRequest
+
+func InitBaseRequest() {
+	Request = &BaseRequest{
+		Client: &http.Client{
+			Timeout:   20 * time.Second,
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
+		},
+	}
+}
 
 type BaseRequest struct {
 	Client *http.Client
 }
 
-func NewBaseRequest(timeout time.Duration) *BaseRequest {
-	return &BaseRequest{
-		Client: &http.Client{
-			Timeout: timeout,
-		},
-	}
-}
-
-func (r *BaseRequest) Do(ctx context.Context, method, url string, headers map[string]string, body interface{}) (*http.Response, []byte, error) {
+func (r *BaseRequest) Do(ctx context.Context, method, urlStr string, headers map[string]string, body interface{}) (*http.Response, []byte, error) {
 	var requestBody []byte
 	var err error
 	if body != nil {
@@ -31,7 +36,7 @@ func (r *BaseRequest) Do(ctx context.Context, method, url string, headers map[st
 		}
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewBuffer(requestBody))
+	req, err := http.NewRequestWithContext(ctx, method, urlStr, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -44,9 +49,7 @@ func (r *BaseRequest) Do(ctx context.Context, method, url string, headers map[st
 	if err != nil {
 		return nil, nil, err
 	}
-	defer func(Body io.ReadCloser) {
-		_ = Body.Close()
-	}(resp.Body)
+	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -56,8 +59,19 @@ func (r *BaseRequest) Do(ctx context.Context, method, url string, headers map[st
 	return resp, respBody, nil
 }
 
-func (r *BaseRequest) Get(ctx context.Context, url string, headers map[string]string) (*http.Response, []byte, error) {
-	return r.Do(ctx, http.MethodGet, url, headers, nil)
+func (r *BaseRequest) Get(ctx context.Context, baseURL string, headers map[string]string, queryParams map[string]string) (*http.Response, []byte, error) {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	q := u.Query()
+	for key, value := range queryParams {
+		q.Set(key, value)
+	}
+	u.RawQuery = q.Encode()
+
+	return r.Do(ctx, http.MethodGet, u.String(), headers, nil)
 }
 
 func (r *BaseRequest) Post(ctx context.Context, url string, headers map[string]string, body interface{}) (*http.Response, []byte, error) {

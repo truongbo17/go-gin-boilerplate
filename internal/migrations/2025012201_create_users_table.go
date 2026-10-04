@@ -6,16 +6,20 @@ import (
 )
 
 var CreateUsersTable = &gormigrate.Migration{
-	ID: "2025012201",
+	ID: "2025012201_create_user_table",
 	Migrate: func(tx *gorm.DB) error {
 		return tx.Exec(`
 			CREATE TABLE users (
-				id INT AUTO_INCREMENT PRIMARY KEY,
-				name VARCHAR(255) NOT NULL,
-				email VARCHAR(100) UNIQUE NOT NULL,
-				password VARCHAR(100) NULL DEFAULT '',
-				created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-				updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
+				id                 INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+				username           VARCHAR(50) UNIQUE          NOT NULL,
+				email              VARCHAR(100) UNIQUE         NOT NULL,
+				password           CHAR(64)                    NOT NULL,
+				status             TINYINT DEFAULT 1,
+				created_by         INT UNSIGNED DEFAULT 0,
+				updated_by         INT UNSIGNED DEFAULT 0,
+				created_at         DATETIME DEFAULT CURRENT_TIMESTAMP,
+				updated_at         DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+				deleted_at         DATETIME NULL
 			);
 		`).Error
 	},

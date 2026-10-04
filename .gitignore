@@ -24,11 +24,20 @@ go.work
 configs/config.yaml
 config.yaml
 tmp
-logs
 build/*
 assets/.DS_Store
 
 .idea
 .env
 
-storage/logs
+storage/logs/*.log
+storage/credentials/*
+
+# IDEs
+.vscode
+.zed
+
+.DS_Store
+*.pem
+*.key
+.env.*.local

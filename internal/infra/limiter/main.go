@@ -1,14 +1,14 @@
 package limiter
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/truongbo17/go-gin-boilerplate/config"
+	redis2 "github.com/truongbo17/go-gin-boilerplate/internal/infra/redis"
 	"github.com/ulule/limiter/v3"
 	mgin "github.com/ulule/limiter/v3/drivers/middleware/gin"
 	"github.com/ulule/limiter/v3/drivers/store/memory"
 	"github.com/ulule/limiter/v3/drivers/store/redis"
-	"go-base/config"
-	"go-base/internal/infra/logger"
-	redis2 "go-base/internal/infra/redis"
 	"net/http"
 	"strconv"
 )
@@ -52,6 +52,5 @@ func InitLimiterStore(storeCache string) {
 		store = memory.NewStoreWithOptions(options)
 	}
 
-	logApp := logger.LogrusLogger
-	logApp.Infoln("Success init limiter middleware with store " + storeCache)
+	fmt.Println("Success init limiter middleware with store " + storeCache)
 }

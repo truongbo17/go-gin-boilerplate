@@ -1,10 +1,18 @@
-version: "3"
 services:
-  go-gin-boilerplate:
-    image: golang:latest
-    container_name: go-gin
-    working_dir: /server
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-go_gin}
+      MYSQL_USER: ${DB_USER:-go_gin}
+      MYSQL_PASSWORD: ${DB_PASS:?Set DB_PASS in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    ports:
+      - "3306:3306"
     volumes:
-      - ./:/server
-    restart: always
-    command: sh -c "make build && ./build/ggb server"
+      - mysql_data:/var/lib/mysql
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+volumes:
+  mysql_data:

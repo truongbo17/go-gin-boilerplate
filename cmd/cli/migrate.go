@@ -2,7 +2,7 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
-	"go-base/internal/migrations"
+	"github.com/truongbo17/go-gin-boilerplate/internal/migrations"
 )
 
 var MigrateCmd = &cobra.Command{

@@ -1,36 +1,37 @@
 package middlewares
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
-	"go-base/config"
-	"go-base/internal/app/auth/model"
-	"go-base/internal/app/auth/repositories"
-	"go-base/internal/app/auth/services"
+	"github.com/truongbo17/go-gin-boilerplate/config"
+	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/enums"
+	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/services"
 	"net/http"
 	"strings"
 )
 
 func JWTMiddleware() gin.HandlerFunc {
-	return func(context *gin.Context) {
-		token := context.GetHeader(config.HeaderAuth)
-		if token == "" {
-			context.AbortWithStatus(http.StatusUnauthorized)
+	return func(c *gin.Context) {
+		header := c.GetHeader(config.HeaderAuth)
+		parts := strings.Fields(header)
+		if len(parts) != 2 || !strings.EqualFold(parts[0], config.TokenType) {
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
-		token = strings.Replace(token, config.TokenType, "", 1)
-		token = strings.TrimSpace(token)
-
-		tokenRepository := repositories.NewTokenRepository()
-		authService := services.NewAuthService(tokenRepository)
-		tokenModel, err := authService.VerifyToken(token, model.TokenTypeAccess)
+		auth := services.NewAuthService()
+		userID, err := auth.VerifyToken(c.Request.Context(), parts[1], enums.TokenTypeAccess)
 		if err != nil {
-			_ = context.Error(err)
-			context.AbortWithStatus(http.StatusUnauthorized)
+			_ = c.Error(err)
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
-
-		context.Set("userId", tokenModel.User)
-
-		context.Next()
+		user, err := auth.GetUserById(c.Request.Context(), userID)
+		if err != nil || user == nil || user.Status != enums.StatusActive {
+			_ = c.Error(errors.New("user unavailable"))
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+		c.Set("user", user)
+		c.Next()
 	}
 }
