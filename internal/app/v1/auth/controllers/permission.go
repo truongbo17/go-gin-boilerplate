@@ -7,7 +7,6 @@ import (
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/v1/auth/responses"
 	"github.com/truongbo17/go-gin-boilerplate/internal/response"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
@@ -123,13 +122,16 @@ func (c *PermissionController) UpdatePermission(ctx *gin.Context) {
 	ctxHandler, span := c.Tracer.Start(ctx.Request.Context(), "UpdatePermission")
 	defer span.End()
 
-	id, _ := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	id, ok := parseID(ctx)
+	if !ok {
+		return
+	}
 
 	var updateRequest, _ = ctx.Get("UpdatePermissionRequest")
 	requestBody, _ := updateRequest.(requests.UpdatePermissionRequest)
 
 	permission, err := c.PermissionService.UpdatePermission(ctxHandler, types.UpdatePermissionInput{
-		ID:          uint(id),
+		ID:          id,
 		Name:        requestBody.Name,
 		Slug:        requestBody.Slug,
 		Description: requestBody.Description,
@@ -164,10 +166,13 @@ func (c *PermissionController) DeletePermission(ctx *gin.Context) {
 	ctxHandler, span := c.Tracer.Start(ctx.Request.Context(), "DeletePermission")
 	defer span.End()
 
-	id, _ := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	id, ok := parseID(ctx)
+	if !ok {
+		return
+	}
 
 	err := c.PermissionService.DeletePermission(ctxHandler, types.DeletePermissionInput{
-		ID: uint(id),
+		ID: id,
 	})
 	if err != nil {
 		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)

@@ -7,7 +7,6 @@ import (
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/v1/auth/responses"
 	"github.com/truongbo17/go-gin-boilerplate/internal/response"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
@@ -125,13 +124,16 @@ func (c *RoleController) UpdateRole(ctx *gin.Context) {
 	ctxHandler, span := c.Tracer.Start(ctx.Request.Context(), "UpdateRole")
 	defer span.End()
 
-	id, _ := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	id, ok := parseID(ctx)
+	if !ok {
+		return
+	}
 
 	var updateRequest, _ = ctx.Get("UpdateRoleRequest")
 	requestBody, _ := updateRequest.(requests.UpdateRoleRequest)
 
 	role, err := c.RoleService.UpdateRole(ctxHandler, types.UpdateRoleInput{
-		ID:          uint(id),
+		ID:          id,
 		Name:        requestBody.Name,
 		Slug:        requestBody.Slug,
 		Description: requestBody.Description,
@@ -166,10 +168,13 @@ func (c *RoleController) DeleteRole(ctx *gin.Context) {
 	ctxHandler, span := c.Tracer.Start(ctx.Request.Context(), "DeleteRole")
 	defer span.End()
 
-	id, _ := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	id, ok := parseID(ctx)
+	if !ok {
+		return
+	}
 
 	err := c.RoleService.DeleteRole(ctxHandler, types.DeleteRoleInput{
-		ID: uint(id),
+		ID: id,
 	})
 	if err != nil {
 		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
@@ -194,9 +199,12 @@ func (c *RoleController) GetUserRoles(ctx *gin.Context) {
 	ctxHandler, span := c.Tracer.Start(ctx.Request.Context(), "GetUserRoles")
 	defer span.End()
 
-	id, _ := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	id, ok := parseID(ctx)
+	if !ok {
+		return
+	}
 
-	roles, err := c.PermissionService.GetUserRoles(ctxHandler, uint(id))
+	roles, err := c.PermissionService.GetUserRoles(ctxHandler, id)
 	if err != nil {
 		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
 		return
@@ -234,9 +242,12 @@ func (c *RoleController) GetRolePermissions(ctx *gin.Context) {
 	ctxHandler, span := c.Tracer.Start(ctx.Request.Context(), "GetRolePermissions")
 	defer span.End()
 
-	id, _ := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	id, ok := parseID(ctx)
+	if !ok {
+		return
+	}
 
-	permissions, err := c.PermissionService.GetRolePermissions(ctxHandler, uint(id))
+	permissions, err := c.PermissionService.GetRolePermissions(ctxHandler, id)
 	if err != nil {
 		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
 		return
@@ -275,13 +286,16 @@ func (c *RoleController) AssignPermissionToRole(ctx *gin.Context) {
 	ctxHandler, span := c.Tracer.Start(ctx.Request.Context(), "AssignPermissionToRole")
 	defer span.End()
 
-	id, _ := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	id, ok := parseID(ctx)
+	if !ok {
+		return
+	}
 
 	var assignRequest, _ = ctx.Get("AssignPermissionToRoleRequest")
 	requestBody, _ := assignRequest.(requests.AssignPermissionToRoleRequest)
 
 	err := c.PermissionService.AssignPermissionToRole(ctxHandler, types.AssignPermissionToRoleInput{
-		RoleID:        uint(id),
+		RoleID:        id,
 		PermissionIDs: requestBody.PermissionIDs,
 	})
 	if err != nil {
@@ -308,13 +322,16 @@ func (c *RoleController) AssignRoleToUser(ctx *gin.Context) {
 	ctxHandler, span := c.Tracer.Start(ctx.Request.Context(), "AssignRoleToUser")
 	defer span.End()
 
-	id, _ := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	id, ok := parseID(ctx)
+	if !ok {
+		return
+	}
 
 	var assignRequest, _ = ctx.Get("AssignRoleToUserRequest")
 	requestBody, _ := assignRequest.(requests.AssignRoleToUserRequest)
 
 	err := c.PermissionService.AssignRoleToUser(ctxHandler, types.AssignRoleToUserInput{
-		UserID:  uint(id),
+		UserID:  id,
 		RoleIDs: requestBody.RoleIDs,
 	})
 	if err != nil {
