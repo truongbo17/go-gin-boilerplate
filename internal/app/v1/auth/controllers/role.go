@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/models"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/services"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/types"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/v1/auth/requests"
@@ -332,6 +333,7 @@ func (c *RoleController) AssignRoleToUser(ctx *gin.Context) {
 
 	err := c.PermissionService.AssignRoleToUser(ctxHandler, types.AssignRoleToUserInput{
 		UserID:  id,
+		ActorID: ctx.MustGet("user").(*models.User).ID,
 		RoleIDs: requestBody.RoleIDs,
 	})
 	if err != nil {

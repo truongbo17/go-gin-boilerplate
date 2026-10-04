@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"crypto/subtle"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/truongbo17/go-gin-boilerplate/config"
@@ -19,14 +20,15 @@ func JWTMiddleware() gin.HandlerFunc {
 			return
 		}
 		auth := services.NewAuthService()
-		userID, err := auth.VerifyToken(c.Request.Context(), parts[1], enums.TokenTypeAccess)
+		userID, claims, err := auth.VerifyTokenClaims(c.Request.Context(), parts[1], enums.TokenTypeAccess)
 		if err != nil {
 			_ = c.Error(err)
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 		user, err := auth.GetUserById(c.Request.Context(), userID)
-		if err != nil || user == nil || user.Status != enums.StatusActive {
+		if err != nil || user == nil || user.Status != enums.StatusActive ||
+			subtle.ConstantTimeCompare([]byte(claims.PasswordVersion), []byte(services.PasswordVersionForUser(user))) != 1 {
 			_ = c.Error(errors.New("user unavailable"))
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return

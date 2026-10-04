@@ -24,8 +24,9 @@ func (User) TableName() string {
 
 type UserClaims struct {
 	jwt.RegisteredClaims
-	Username    string          `json:"username"`
-	Email       string          `json:"email"`
-	Type        enums.TokenType `json:"type"`
-	Permissions []string        `json:"permissions,omitempty"`
+	Username        string          `json:"username"`
+	Email           string          `json:"email"`
+	Type            enums.TokenType `json:"type"`
+	PasswordVersion string          `json:"password_version"`
+	Permissions     []string        `json:"permissions,omitempty"`
 }

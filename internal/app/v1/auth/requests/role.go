@@ -5,10 +5,13 @@ import (
 	"github.com/truongbo17/go-gin-boilerplate/internal/infra/i18n"
 	"github.com/truongbo17/go-gin-boilerplate/internal/request"
 	"net/http"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
 	validation "github.com/go-ozzo/ozzo-validation"
 )
+
+var roleSlugPattern = regexp.MustCompile(`^[a-z][a-z0-9:_-]{0,99}$`)
 
 type ListRoleRequest struct {
 	Search string `json:"search" form:"search"`
@@ -23,6 +26,7 @@ func (a ListRoleRequest) Validate(lang string) error {
 		),
 		validation.Field(&a.Page,
 			validation.Min(0).Error(i18n.GetMessage(lang, "validation.min", map[string]string{"min": "0"})),
+			validation.Max(10000),
 		),
 		validation.Field(&a.Search,
 			validation.Length(0, 100).Error(i18n.GetMessage(lang, "validation.length", map[string]string{"min": "0", "max": "100"})),
@@ -60,6 +64,7 @@ func (a CreateRoleRequest) Validate(lang string) error {
 		validation.Field(&a.Slug,
 			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
 			validation.Length(1, 100).Error(i18n.GetMessage(lang, "validation.length", map[string]string{"min": "1", "max": "100"})),
+			validation.Match(roleSlugPattern),
 		),
 		validation.Field(&a.Description,
 			validation.Length(0, 500).Error(i18n.GetMessage(lang, "validation.length", map[string]string{"min": "0", "max": "500"})),
@@ -97,6 +102,7 @@ func (a UpdateRoleRequest) Validate(lang string) error {
 		validation.Field(&a.Slug,
 			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
 			validation.Length(1, 100).Error(i18n.GetMessage(lang, "validation.length", map[string]string{"min": "1", "max": "100"})),
+			validation.Match(roleSlugPattern),
 		),
 		validation.Field(&a.Description,
 			validation.Length(0, 500).Error(i18n.GetMessage(lang, "validation.length", map[string]string{"min": "0", "max": "500"})),

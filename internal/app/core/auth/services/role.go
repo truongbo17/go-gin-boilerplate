@@ -8,6 +8,7 @@ import (
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/types"
 	"github.com/truongbo17/go-gin-boilerplate/internal/repository"
 	"github.com/truongbo17/go-gin-boilerplate/internal/response"
+	"strings"
 	"sync"
 )
 
@@ -55,6 +56,9 @@ func (rs *RoleService) ListRoles(ctx context.Context, input types.ListRolesInput
 }
 
 func (rs *RoleService) CreateRole(ctx context.Context, input types.CreateRoleInput) (*models.Role, *core.ErrorReturn) {
+	if isReservedAdminSlug(input.Slug) {
+		return nil, &core.ErrorReturn{ErrorCode: response.ErrForbidden}
+	}
 	role := &models.Role{
 		Name:        input.Name,
 		Slug:        input.Slug,
@@ -74,6 +78,9 @@ func (rs *RoleService) CreateRole(ctx context.Context, input types.CreateRoleInp
 }
 
 func (rs *RoleService) UpdateRole(ctx context.Context, input types.UpdateRoleInput) (*models.Role, *core.ErrorReturn) {
+	if isReservedAdminSlug(input.Slug) {
+		return nil, &core.ErrorReturn{ErrorCode: response.ErrForbidden}
+	}
 	role, err := rs.RoleRepository.FindOneByCondition(ctx, map[string]interface{}{
 		"id": input.ID,
 	})
@@ -87,6 +94,9 @@ func (rs *RoleService) UpdateRole(ctx context.Context, input types.UpdateRoleInp
 		return nil, &core.ErrorReturn{
 			ErrorCode: response.ErrRoleNotFound,
 		}
+	}
+	if isReservedAdminSlug(role.Slug) {
+		return nil, &core.ErrorReturn{ErrorCode: response.ErrForbidden}
 	}
 
 	updateData := map[string]interface{}{
@@ -108,7 +118,17 @@ func (rs *RoleService) UpdateRole(ctx context.Context, input types.UpdateRoleInp
 }
 
 func (rs *RoleService) DeleteRole(ctx context.Context, input types.DeleteRoleInput) *core.ErrorReturn {
-	err := rs.RoleRepository.Delete(ctx, input.ID)
+	role, err := rs.RoleRepository.FindOneByCondition(ctx, map[string]interface{}{"id": input.ID})
+	if err != nil {
+		return &core.ErrorReturn{ErrorCode: response.ErrRoleInternalError, Err: err}
+	}
+	if role == nil {
+		return &core.ErrorReturn{ErrorCode: response.ErrRoleNotFound}
+	}
+	if isReservedAdminSlug(role.Slug) {
+		return &core.ErrorReturn{ErrorCode: response.ErrForbidden}
+	}
+	err = rs.RoleRepository.Delete(ctx, input.ID)
 	if err != nil {
 		return &core.ErrorReturn{
 			ErrorCode: response.ErrRoleDeleteFailed,
@@ -117,4 +137,8 @@ func (rs *RoleService) DeleteRole(ctx context.Context, input types.DeleteRoleInp
 	}
 
 	return nil
+}
+
+func isReservedAdminSlug(slug string) bool {
+	return strings.EqualFold(strings.TrimSpace(slug), "admin")
 }

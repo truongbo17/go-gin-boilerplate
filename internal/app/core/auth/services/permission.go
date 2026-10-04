@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"errors"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/models"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/repositories"
@@ -35,53 +34,22 @@ func NewPermissionService() PermissionService {
 }
 
 func (ps *PermissionService) CheckPermission(ctx context.Context, userID uint, permissionSlug string) (bool, error) {
-	// Get all roles for the user
-	var userRoles []models.UserRole
-	if err := database.DB.Where("user_id = ?", userID).Find(&userRoles).Error; err != nil {
+	db := database.DB.WithContext(ctx)
+	admin, err := hasAdminRole(db, userID)
+	if err != nil {
 		return false, err
 	}
-
-	if len(userRoles) == 0 {
-		return false, nil
-	}
-
-	roleIDs := make([]uint, len(userRoles))
-	for i, ur := range userRoles {
-		roleIDs[i] = ur.RoleID
-	}
-	var adminRoles int64
-	if err := database.DB.WithContext(ctx).Model(&models.Role{}).Where("id IN ? AND slug = ?", roleIDs, "admin").Count(&adminRoles).Error; err != nil {
-		return false, err
-	}
-	if adminRoles > 0 {
+	if admin {
 		return true, nil
 	}
-
-	// Get all permissions for these roles
-	var rolePermissions []models.RolePermission
-	if err := database.DB.Where("role_id IN ?", roleIDs).Find(&rolePermissions).Error; err != nil {
-		return false, err
-	}
-
-	if len(rolePermissions) == 0 {
-		return false, nil
-	}
-
-	permissionIDs := make([]uint, len(rolePermissions))
-	for i, rp := range rolePermissions {
-		permissionIDs[i] = rp.PermissionID
-	}
-
-	// Check if the permission exists
-	var permission models.Permission
-	if err := database.DB.Where("id IN ? AND slug = ?", permissionIDs, permissionSlug).First(&permission).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	return true, nil
+	var count int64
+	err = db.Table("user_roles").
+		Joins("JOIN roles ON roles.id = user_roles.role_id").
+		Joins("JOIN role_permissions ON role_permissions.role_id = roles.id").
+		Joins("JOIN permissions ON permissions.id = role_permissions.permission_id").
+		Where("user_roles.user_id = ? AND permissions.slug = ? AND roles.deleted_at IS NULL AND permissions.deleted_at IS NULL", userID, permissionSlug).
+		Count(&count).Error
+	return count > 0, err
 }
 
 func (ps *PermissionService) ListPermissions(ctx context.Context, input types.ListPermissionsInput) (*response.PaginateResponse[models.Permission], *core.ErrorReturn) {
@@ -249,6 +217,25 @@ func (ps *PermissionService) AssignPermissionToRole(ctx context.Context, input t
 
 func (ps *PermissionService) AssignRoleToUser(ctx context.Context, input types.AssignRoleToUserInput) *core.ErrorReturn {
 	err := database.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		actorIsAdmin, err := hasAdminRole(tx, input.ActorID)
+		if err != nil {
+			return err
+		}
+		if !actorIsAdmin {
+			targetIsAdmin, err := hasAdminRole(tx, input.UserID)
+			if err != nil {
+				return err
+			}
+			var selectedAdminRoles int64
+			if len(input.RoleIDs) > 0 {
+				if err := tx.Model(&models.Role{}).Where("id IN ? AND slug = ?", input.RoleIDs, "admin").Count(&selectedAdminRoles).Error; err != nil {
+					return err
+				}
+			}
+			if targetIsAdmin || selectedAdminRoles > 0 {
+				return gorm.ErrInvalidData
+			}
+		}
 		if err := tx.Where("user_id = ?", input.UserID).Delete(&models.UserRole{}).Error; err != nil {
 			return err
 		}
@@ -263,4 +250,13 @@ func (ps *PermissionService) AssignRoleToUser(ctx context.Context, input types.A
 		return &core.ErrorReturn{ErrorCode: response.ErrRoleAssignUser, Err: err}
 	}
 	return nil
+}
+
+func hasAdminRole(db *gorm.DB, userID uint) (bool, error) {
+	var count int64
+	err := db.Model(&models.Role{}).
+		Joins("JOIN user_roles ON user_roles.role_id = roles.id").
+		Where("user_roles.user_id = ? AND roles.slug = ?", userID, "admin").
+		Count(&count).Error
+	return count > 0, err
 }

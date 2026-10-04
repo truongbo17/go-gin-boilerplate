@@ -24,3 +24,7 @@ func RateLimitPublic() gin.HandlerFunc {
 
 	return core.Limit(rate)
 }
+
+func RateLimitLogin() gin.HandlerFunc {
+	return core.Limit(limiter.Rate{Period: 1 * time.Minute, Limit: 10})
+}

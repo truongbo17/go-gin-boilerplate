@@ -42,16 +42,20 @@ type MetaData struct {
 
 func ReturnSuccess(ctx *gin.Context, data interface{}, extraData interface{}) {
 	ctx.JSON(http.StatusOK, BaseResponse{
-		Status:    true,
-		RequestId: ctx.GetString(config.HeaderRequestID),
-		Message:   i18n.GetMessage(ctx.GetString(config.HeaderLanguage), "success.200", nil),
-		Data:      data,
-		ExtraData: extraData,
+		Status:     true,
+		StatusCode: http.StatusOK,
+		RequestId:  ctx.GetString(config.HeaderRequestID),
+		Message:    i18n.GetMessage(ctx.GetString(config.HeaderLanguage), "success.200", nil),
+		Data:       data,
+		ExtraData:  extraData,
 	})
 	ctx.Abort()
 }
 
 func ReturnError(ctx *gin.Context, status int, code int, err interface{}) {
+	if status == http.StatusOK {
+		status = statusForCode(code)
+	}
 	if err != nil && code >= ErrApp {
 		logger.LogrusLogger.Errorf("Error: %+v, code: %d, path: %s, method: %s, request_id: %s",
 			err,
@@ -98,6 +102,24 @@ func ReturnError(ctx *gin.Context, status int, code int, err interface{}) {
 		Error:      errMsg,
 	})
 	ctx.Abort()
+}
+
+func statusForCode(code int) int {
+	switch code {
+	case ErrAuthUserNotFound, ErrAuthWrongPassword, ErrAuthLoginFailed, ErrUnauthorized:
+		return http.StatusUnauthorized
+	case ErrForbidden:
+		return http.StatusForbidden
+	case ErrRoleNotFound, ErrPermissionNotFound, ErrUserNotFound, ErrNotFound:
+		return http.StatusNotFound
+	case ErrAuthUserExists:
+		return http.StatusConflict
+	case ErrAuthGenerateToken, ErrAuthRegisterFailed, ErrUserListInternalError,
+		ErrRoleInternalError, ErrPermissionInternalError, ErrInternalServerError:
+		return http.StatusInternalServerError
+	default:
+		return http.StatusBadRequest
+	}
 }
 
 func splitValidationErrors(errorsList []string) map[string]string {

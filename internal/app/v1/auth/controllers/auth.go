@@ -133,17 +133,17 @@ func (c *AuthController) ChangePass(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, err := c.AuthService.GenerateToken(ctxHandler, enums.TokenTypeRefresh, user)
-	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, response.ErrRefreshToken, err)
-		return
-	}
-
 	err = c.UserService.UserRepository.Update(ctxHandler, user, &models.User{
 		Password: string(newPass),
 	})
 	if err != nil {
 		response.ReturnError(ctx, http.StatusOK, response.ErrChangePass, err)
+		return
+	}
+	user.Password = string(newPass)
+	accessToken, err := c.AuthService.GenerateToken(ctxHandler, enums.TokenTypeAccess, user)
+	if err != nil {
+		response.ReturnError(ctx, http.StatusInternalServerError, response.ErrAuthGenerateToken, err)
 		return
 	}
 

@@ -2,6 +2,9 @@ package services
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
@@ -51,15 +54,17 @@ func (authService *AuthService) Login(ctx context.Context, input types.LoginInpu
 	}
 	if user == nil {
 		return nil, &core.ErrorReturn{
-			ErrorCode: response.ErrAuthUserNotFound,
+			ErrorCode: response.ErrAuthLoginFailed,
 		}
+	}
+	if user.Status != enums.StatusActive {
+		return nil, &core.ErrorReturn{ErrorCode: response.ErrAuthLoginFailed}
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
 	if err != nil {
 		return nil, &core.ErrorReturn{
-			ErrorCode: response.ErrAuthWrongPassword,
-			Err:       err,
+			ErrorCode: response.ErrAuthLoginFailed,
 		}
 	}
 
@@ -155,9 +160,10 @@ func (authService *AuthService) generateToken(ctx context.Context, tokenType enu
 
 	jti := uuid.New().String()
 	claims := &models.UserClaims{
-		Email:    user.Email,
-		Username: user.Username,
-		Type:     tokenType,
+		Email:           user.Email,
+		Username:        user.Username,
+		Type:            tokenType,
+		PasswordVersion: passwordVersion(configAuth.JWTSecretKey, user.Password),
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
@@ -180,6 +186,11 @@ func (authService *AuthService) GeneratePassword(plainPassword string) ([]byte, 
 }
 
 func (authService *AuthService) VerifyToken(ctx context.Context, token string, tokenType enums.TokenType) (uint, error) {
+	id, _, err := authService.VerifyTokenClaims(ctx, token, tokenType)
+	return id, err
+}
+
+func (authService *AuthService) VerifyTokenClaims(ctx context.Context, token string, tokenType enums.TokenType) (uint, *models.UserClaims, error) {
 	configAuth := config.EnvConfig.Auth
 	claims := &models.UserClaims{}
 
@@ -190,23 +201,23 @@ func (authService *AuthService) VerifyToken(ctx context.Context, token string, t
 		return []byte(configAuth.JWTSecretKey), nil
 	})
 	if err != nil || claims.Type != tokenType || claims.ExpiresAt == nil || claims.ID == "" {
-		return 0, errors.New("not valid token parse")
+		return 0, nil, errors.New("not valid token parse")
 	}
 	i, err := strconv.Atoi(claims.Subject)
 	if err != nil || i <= 0 {
-		return 0, errors.New("invalid token subject")
+		return 0, nil, errors.New("invalid token subject")
 	}
 	userId := uint(i)
 
 	hasBlacklist, err := cache.Cache.Get(ctx, fmt.Sprintf(config.CacheKeyBlacklist, userId, claims.ID))
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 	if hasBlacklist != nil {
-		return 0, errors.New("token invalid")
+		return 0, nil, errors.New("token invalid")
 	}
 
-	return userId, nil
+	return userId, claims, nil
 }
 
 func (authService *AuthService) GetUserById(ctx context.Context, id uint) (*models.User, error) {
@@ -219,24 +230,17 @@ func (authService *AuthService) GetUserById(ctx context.Context, id uint) (*mode
 }
 
 func (authService *AuthService) GenerateToken(ctx context.Context, tokenType enums.TokenType, user *models.User) (string, error) {
-	configAuth := config.EnvConfig.Auth
-	expiresAt := tokenExpiry(configAuth, tokenType)
+	return authService.generateToken(ctx, tokenType, user)
+}
 
-	jti := uuid.New().String()
-	claims := &models.UserClaims{
-		Email:    user.Email,
-		Username: user.Username,
-		Type:     tokenType,
-		RegisteredClaims: jwt.RegisteredClaims{
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(expiresAt),
-			Subject:   strconv.Itoa(int(user.ID)),
-			ID:        jti,
-		},
-	}
+func passwordVersion(secret, passwordHash string) string {
+	mac := hmac.New(sha256.New, []byte(secret))
+	_, _ = mac.Write([]byte(passwordHash))
+	return hex.EncodeToString(mac.Sum(nil))
+}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(configAuth.JWTSecretKey))
+func PasswordVersionForUser(user *models.User) string {
+	return passwordVersion(config.EnvConfig.Auth.JWTSecretKey, user.Password)
 }
 
 func tokenExpiry(auth config.Auth, tokenType enums.TokenType) time.Time {

@@ -33,3 +33,23 @@ func TestLogoutRevokesAccessToken(t *testing.T) {
 		t.Fatal("revoked token was accepted")
 	}
 }
+
+func TestPasswordChangeInvalidatesPreviousTokenVersion(t *testing.T) {
+	config.EnvConfig = &config.Config{Auth: config.Auth{JWTSecretKey: strings.Repeat("x", 32), JWTAccessExpirationMinutes: 10}}
+	cache.Cache = cache.NewLocal(time.Minute, time.Minute)
+	service := AuthService{}
+	user := &models.User{Password: "previous-password-hash"}
+	user.ID = 42
+	token, err := service.GenerateToken(context.Background(), enums.TokenTypeAccess, user)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, claims, err := service.VerifyTokenClaims(context.Background(), token, enums.TokenTypeAccess)
+	if err != nil || claims.PasswordVersion != PasswordVersionForUser(user) {
+		t.Fatalf("new token has invalid password version: %v", err)
+	}
+	user.Password = "new-password-hash"
+	if claims.PasswordVersion == PasswordVersionForUser(user) {
+		t.Fatal("old token remained valid after password change")
+	}
+}

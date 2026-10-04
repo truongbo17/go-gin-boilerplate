@@ -19,6 +19,7 @@ func LoadAuthV1(r *gin.RouterGroup) {
 			handler.Me,
 		)
 		auth.POST("login",
+			middlewares.RateLimitLogin(),
 			requests.LoginValidator(),
 			handler.Login,
 		)
