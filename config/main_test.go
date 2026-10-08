@@ -37,7 +37,10 @@ func TestEnvironmentOnlyConfiguration(t *testing.T) {
 	t.Setenv("DB_USER", "test")
 	t.Setenv("DB_DATABASE", "test")
 	t.Setenv("JWT_SECRET", strings.Repeat("x", 32))
-	config := setupConfig()
+	config, err := setupConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if config.Database.Master.Username != "test" || config.App.Port != "8000" || config.Database.Master.MaxOpenConns != 30 {
 		t.Fatalf("environment-only configuration was not loaded: %+v", config)
 	}
@@ -52,6 +55,21 @@ func TestDatabasePoolConfigurationIsValidated(t *testing.T) {
 	}
 	if err := config.validate(); err == nil {
 		t.Fatal("accepted more idle than open database connections")
+	}
+}
+
+func TestInvalidEnvironmentReturnsError(t *testing.T) {
+	viper.Reset()
+	t.Cleanup(viper.Reset)
+	t.Setenv("APP_ENV", "local")
+	t.Setenv("DB_HOST", "127.0.0.1")
+	t.Setenv("DB_PORT", "3306")
+	t.Setenv("DB_USER", "test")
+	t.Setenv("DB_DATABASE", "test")
+	t.Setenv("DB_MAX_OPEN_CONNS", "0")
+	t.Setenv("JWT_SECRET", strings.Repeat("x", 32))
+	if _, err := setupConfig(); err == nil {
+		t.Fatal("expected invalid pool configuration to return an error")
 	}
 }
 

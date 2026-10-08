@@ -67,7 +67,7 @@ func (config *Config) validate() error {
 
 var EnvConfig *Config
 
-func setupConfig() *Config {
+func setupConfig() (*Config, error) {
 	viper.SetConfigFile(".env")
 	viper.SetConfigType("env")
 
@@ -94,30 +94,35 @@ func setupConfig() *Config {
 		"ELASTIC_APM_GLOBAL_LABELS",
 	} {
 		if err := viper.BindEnv(key); err != nil {
-			panic(err)
+			return nil, fmt.Errorf("bind environment variable %s: %w", key, err)
 		}
 	}
 
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil && !errors.Is(err, os.ErrNotExist) {
-		panic(fmt.Errorf("fatal error config file: %w", err))
+		return nil, fmt.Errorf("read config file: %w", err)
 	}
 
 	config := &Config{}
 	if err := viper.Unmarshal(config); err != nil {
-		panic(err)
+		return nil, fmt.Errorf("decode config: %w", err)
 	}
 
 	if err := config.validate(); err != nil {
-		panic(err)
+		return nil, fmt.Errorf("validate config: %w", err)
 	}
 
-	return config
+	return config, nil
 }
 
-func Init() {
-	EnvConfig = setupConfig()
+func Init() error {
+	loaded, err := setupConfig()
+	if err != nil {
+		return err
+	}
+	EnvConfig = loaded
 
 	fmt.Println("Success init config")
+	return nil
 }

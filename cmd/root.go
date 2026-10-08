@@ -26,7 +26,9 @@ var rootCmd = &cobra.Command{
 		if cmd.Name() == "version" {
 			return nil
 		}
-		config.Init()
+		if err := config.Init(); err != nil {
+			return err
+		}
 		if config.EnvConfig.App.Env == config.ReleaseMode {
 			gin.SetMode(gin.ReleaseMode)
 		}
