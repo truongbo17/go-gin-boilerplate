@@ -109,3 +109,32 @@ func TestSecurityAndCORSHeaders(t *testing.T) {
 		t.Fatalf("Cache-Control = %q", got)
 	}
 }
+
+func TestRateLimitClientIPRespectsTrustedProxies(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	for _, tc := range []struct {
+		name      string
+		proxies   string
+		remaining string
+	}{
+		{"untrusted forwarded header", "", "8"},
+		{"trusted proxy", "127.0.0.1", "9"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			config.EnvConfig = &config.Config{App: config.App{Env: config.LocalMode, TrustedProxies: tc.proxies}, Cors: config.Cors{AllowOrigin: "http://localhost:3000"}, Cache: config.Cache{CacheStore: config.CacheStoreLocal}}
+			logger.LogrusLogger = logrus.New()
+			limiter.InitLimiterStore(config.CacheStoreLocal)
+			Init()
+			for i, ip := range []string{"198.51.100.10", "198.51.100.11"} {
+				recorder := httptest.NewRecorder()
+				request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
+				request.RemoteAddr = "127.0.0.1:12345"
+				request.Header.Set("X-Forwarded-For", ip)
+				Router.ServeHTTP(recorder, request)
+				if i == 1 && recorder.Header().Get("X-RateLimit-Remaining") != tc.remaining {
+					t.Fatalf("remaining = %q, want %q", recorder.Header().Get("X-RateLimit-Remaining"), tc.remaining)
+				}
+			}
+		})
+	}
+}

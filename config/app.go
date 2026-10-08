@@ -13,8 +13,9 @@ const (
 var LanguageAvailable = [2]string{English, Vietnamese}
 
 type App struct {
-	Env  string `mapstructure:"APP_ENV"`
-	Url  string `mapstructure:"APP_URL"`
-	Name string `mapstructure:"APP_NAME"`
-	Port string `mapstructure:"APP_PORT"`
+	Env            string `mapstructure:"APP_ENV"`
+	Url            string `mapstructure:"APP_URL"`
+	Name           string `mapstructure:"APP_NAME"`
+	Port           string `mapstructure:"APP_PORT"`
+	TrustedProxies string `mapstructure:"APP_TRUSTED_PROXIES"`
 }

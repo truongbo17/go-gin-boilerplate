@@ -113,7 +113,9 @@ The Docker Compose file under `deployments/` starts MySQL and Redis for developm
 - Supply a unique JWT secret with at least 32 characters; no secret is bundled.
 - Set exact CORS origins for your clients. The example allows `http://localhost:3000`.
 - Use Redis-backed cache for token revocation and rate limits across replicas.
-- Login is limited to 10 attempts per minute per client IP. Request bodies are limited to 1 MiB. API failures use HTTP error status codes.
+- Login is limited to 10 attempts per minute per client IP; authenticated API routes use a separate 300 requests per minute per IP limit. `/ping` and `/ready` are not rate limited so health probes cannot exhaust client quotas. A 429 response includes `Retry-After`; rate limit and request ID headers are exposed to allowed browser origins.
+- By default, forwarded IP headers are ignored. Behind a reverse proxy, set `APP_TRUSTED_PROXIES` to its exact IP or CIDR (comma-separated for multiple proxies), and restrict direct access to the app. Never set it to a public or unrestricted CIDR: the rate limiter uses the resulting client IP. Configure HTTPS and HSTS at the TLS-terminating proxy.
+- Request bodies are limited to 1 MiB, including streamed bodies. API failures use HTTP error status codes, and responses use `Cache-Control: no-store`.
 - Access tokens include a password version; changing a password invalidates tokens issued before the change. Tokens issued by older versions of this boilerplate need a fresh login after upgrading.
 - Place credentials only in local environment or a secret manager, never in Git.
 - Use `--password-stdin` when creating users so passwords do not appear in process arguments or shell history.

@@ -69,6 +69,7 @@ func setupConfig() *Config {
 
 	viper.SetDefault("APP_ENV", "debug")
 	viper.SetDefault("APP_PORT", "8000")
+	viper.SetDefault("APP_TRUSTED_PROXIES", "")
 	viper.SetDefault("CORS_ALLOW_ORIGIN", "http://localhost:3000")
 	viper.SetDefault("CACHE_STORE", "local")
 
