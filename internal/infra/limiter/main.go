@@ -18,7 +18,8 @@ import (
 
 func limitReachedHandler(context *gin.Context) {
 	if reset, err := strconv.ParseInt(context.Writer.Header().Get("X-RateLimit-Reset"), 10, 64); err == nil {
-		seconds := int64(time.Until(time.Unix(reset, 0)).Seconds())
+		remaining := time.Until(time.Unix(reset, 0))
+		seconds := int64((remaining + time.Second - 1) / time.Second)
 		if seconds < 1 {
 			seconds = 1
 		}
