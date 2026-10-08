@@ -12,7 +12,7 @@ func TestRedisRequiredOnlyWhenSelected(t *testing.T) {
 		App:      App{Port: "8000", Env: LocalMode},
 		Database: Database{Master: Master{Host: "127.0.0.1", Port: "3306", Username: "test", Database: "test", MaxOpenConns: 30, MaxIdleConns: 15}},
 		Cache:    Cache{CacheStore: CacheStoreLocal},
-		Auth:     Auth{JWTSecretKey: strings.Repeat("x", 32)},
+		Auth:     Auth{JWTSecretKey: strings.Repeat("x", 32), JWTAccessExpirationMinutes: 60, JWTRefreshExpirationDays: 7},
 	}
 	if err := config.validate(); err != nil {
 		t.Fatal(err)
@@ -51,10 +51,15 @@ func TestDatabasePoolConfigurationIsValidated(t *testing.T) {
 		App:      App{Port: "8000", Env: LocalMode},
 		Database: Database{Master: Master{Host: "127.0.0.1", Port: "3306", Username: "test", Database: "test", MaxOpenConns: 10, MaxIdleConns: 11}},
 		Cache:    Cache{CacheStore: CacheStoreLocal},
-		Auth:     Auth{JWTSecretKey: strings.Repeat("x", 32)},
+		Auth:     Auth{JWTSecretKey: strings.Repeat("x", 32), JWTAccessExpirationMinutes: 60, JWTRefreshExpirationDays: 7},
 	}
 	if err := config.validate(); err == nil {
 		t.Fatal("accepted more idle than open database connections")
+	}
+	config.Database.Master.MaxIdleConns = 0
+	config.Database.Master.MaxOpenConns = 0
+	if err := config.validate(); err == nil {
+		t.Fatal("accepted zero maximum open database connections")
 	}
 }
 
@@ -78,10 +83,27 @@ func TestTraceSampleRatioIsBounded(t *testing.T) {
 		App:      App{Port: "8000", Env: LocalMode},
 		Database: Database{Master: Master{Host: "127.0.0.1", Port: "3306", Username: "test", Database: "test", MaxOpenConns: 30, MaxIdleConns: 15}},
 		Cache:    Cache{CacheStore: CacheStoreLocal},
-		Auth:     Auth{JWTSecretKey: strings.Repeat("x", 32)},
+		Auth:     Auth{JWTSecretKey: strings.Repeat("x", 32), JWTAccessExpirationMinutes: 60, JWTRefreshExpirationDays: 7},
 		Tracer:   Tracer{SampleRatio: 1.1},
 	}
 	if err := config.validate(); err == nil {
 		t.Fatal("accepted sampling ratio above one")
+	}
+}
+
+func TestJWTExpirationMustBePositive(t *testing.T) {
+	config := &Config{
+		App:      App{Port: "8000", Env: LocalMode},
+		Database: Database{Master: Master{Host: "127.0.0.1", Port: "3306", Username: "test", Database: "test", MaxOpenConns: 30, MaxIdleConns: 15}},
+		Cache:    Cache{CacheStore: CacheStoreLocal},
+		Auth:     Auth{JWTSecretKey: strings.Repeat("x", 32), JWTAccessExpirationMinutes: 0, JWTRefreshExpirationDays: 7},
+	}
+	if err := config.validate(); err == nil {
+		t.Fatal("accepted zero access token lifetime")
+	}
+	config.Auth.JWTAccessExpirationMinutes = 60
+	config.Auth.JWTRefreshExpirationDays = -1
+	if err := config.validate(); err == nil {
+		t.Fatal("accepted negative refresh token lifetime")
 	}
 }

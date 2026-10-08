@@ -41,7 +41,7 @@ func (config *Config) validate() error {
 		validation.Field(&config.Database.Master.Host, validation.Required, is.Host),
 		validation.Field(&config.Database.Master.Username, validation.Required),
 		validation.Field(&config.Database.Master.Database, validation.Required),
-		validation.Field(&config.Database.Master.MaxOpenConns, validation.Min(1)),
+		validation.Field(&config.Database.Master.MaxOpenConns, validation.Required, validation.Min(1)),
 		validation.Field(&config.Database.Master.MaxIdleConns, validation.Min(0), validation.Max(config.Database.Master.MaxOpenConns)),
 		validation.Field(&config.Database.Master.ConnMaxLifetimeMinutes, validation.Min(0)),
 		validation.Field(&config.Database.Master.ConnMaxIdleTimeMinutes, validation.Min(0)),
@@ -51,6 +51,8 @@ func (config *Config) validate() error {
 
 		// Auth
 		validation.Field(&config.Auth.JWTSecretKey, validation.Required, validation.Length(32, 0)),
+		validation.Field(&config.Auth.JWTAccessExpirationMinutes, validation.Required, validation.Min(1)),
+		validation.Field(&config.Auth.JWTRefreshExpirationDays, validation.Required, validation.Min(1)),
 		validation.Field(&config.Tracer.SampleRatio, validation.Min(0.0), validation.Max(1.0)),
 	)
 	if err != nil {
