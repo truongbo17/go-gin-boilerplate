@@ -12,11 +12,10 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
-	"log"
 	"time"
 )
 
-func InitServer() {
+func Start() (*asynq.Server, error) {
 	EnvConfig := config.EnvConfig
 	configRedis := EnvConfig.Cache
 
@@ -27,22 +26,17 @@ func InitServer() {
 			Password: configRedis.RedisPassword,
 		},
 		asynq.Config{
-			Concurrency: 20,
+			Concurrency:     20,
+			ShutdownTimeout: 25 * time.Second,
 			Queues: map[string]int{
 				"critical": 6,
 				"default":  3,
 				"low":      1,
 			},
-			RetryDelayFunc: func(n int, err error, task *asynq.Task) time.Duration {
-				var de DelayableError
-				if errors.As(err, &de) {
-					return de.RetryIn()
-				}
-				return time.Duration(5<<n) * time.Second // Exponential: 5, 10, 15, 20s...
-			},
-			Logger:       logger.LogrusLogger,
-			ErrorHandler: asynq.ErrorHandlerFunc(errorHandler),
-			IsFailure:    func(err error) bool { return !isRateLimitError(err) },
+			RetryDelayFunc: retryDelay,
+			Logger:         logger.LogrusLogger,
+			ErrorHandler:   asynq.ErrorHandlerFunc(errorHandler),
+			IsFailure:      func(err error) bool { return !isRateLimitError(err) },
 		},
 	)
 
@@ -53,10 +47,25 @@ func InitServer() {
 		mux.HandleFunc(name, handler)
 	}
 
-	if err := srv.Run(mux); err != nil {
-		log.Fatalf("could not run server: %v", err)
+	if err := srv.Start(mux); err != nil {
+		return nil, fmt.Errorf("start worker: %w", err)
 	}
 	fmt.Println("Success init server asynq queue.")
+	return srv, nil
+}
+
+func retryDelay(n int, err error, _ *asynq.Task) time.Duration {
+	var delayable DelayableError
+	if errors.As(err, &delayable) {
+		return max(0, delayable.RetryIn())
+	}
+	if n < 0 {
+		n = 0
+	}
+	if n > 6 {
+		n = 6
+	}
+	return min(time.Duration(5<<n)*time.Second, 5*time.Minute)
 }
 
 func asynqTracingMiddleware(next asynq.Handler) asynq.Handler {

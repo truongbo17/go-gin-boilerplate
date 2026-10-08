@@ -9,17 +9,17 @@ import (
 	"github.com/truongbo17/go-gin-boilerplate/internal/infra/redis"
 )
 
-func Init() {
+func Start() (gocron.Scheduler, error) {
 	client := redis.ClientRedis
 
 	locker, err := redislock.NewRedisLocker(client, redislock.WithTries(config.DefaultScheduleLockRedisRetry))
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("create schedule lock: %w", err)
 	}
 
 	s, err := gocron.NewScheduler(gocron.WithDistributedLocker(locker))
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("create scheduler: %w", err)
 	}
 
 	for _, schedule := range register.Schedules {
@@ -29,10 +29,12 @@ func Init() {
 			schedule.Options...,
 		)
 		if err != nil {
-			panic(err)
+			_ = s.Shutdown()
+			return nil, fmt.Errorf("register schedule: %w", err)
 		}
 	}
 
 	s.Start()
 	fmt.Println("Success init schedule/cron")
+	return s, nil
 }
