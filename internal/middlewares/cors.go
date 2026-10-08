@@ -8,13 +8,17 @@ import (
 )
 
 func Cors() gin.HandlerFunc {
-	EnvConfig := config.EnvConfig
-	patternAllowOrigin := EnvConfig.Cors.AllowOrigin
+	patternAllowOrigin := config.EnvConfig.Cors.AllowOrigin
 	allowOrigin := []string{"http://localhost:3000"}
 
 	if patternAllowOrigin != "" {
-		allowOrigin = strings.Split(EnvConfig.Cors.AllowOrigin, ",")
-		if allowOrigin == nil || len(allowOrigin) == 0 {
+		allowOrigin = nil
+		for _, origin := range strings.Split(patternAllowOrigin, ",") {
+			if origin = strings.TrimSpace(origin); origin != "" {
+				allowOrigin = append(allowOrigin, origin)
+			}
+		}
+		if len(allowOrigin) == 0 {
 			allowOrigin = []string{"http://localhost:3000"}
 		}
 	}
@@ -23,7 +27,7 @@ func Cors() gin.HandlerFunc {
 		AllowOrigins:     allowOrigin,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Language", "X-Request-ID"},
-		ExposeHeaders:    []string{"Content-Length"},
+		ExposeHeaders:    []string{"Content-Length", "X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset", "Retry-After"},
 		AllowCredentials: false,
 	})
 }

@@ -29,7 +29,9 @@ func LoginValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 
 		var loginRequest LoginRequest
-		_ = context.ShouldBind(&loginRequest)
+		if !bindRequest(context, &loginRequest) {
+			return
+		}
 
 		if err := loginRequest.Validate(context.GetString(config.HeaderLanguage)); err != nil {
 			_ = context.AbortWithError(http.StatusUnprocessableEntity, err)
@@ -76,7 +78,9 @@ func (a ChangePasswordRequest) Validate(lang string) error {
 func ChangePasswordValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var changePasswordRequest ChangePasswordRequest
-		_ = context.ShouldBind(&changePasswordRequest)
+		if !bindRequest(context, &changePasswordRequest) {
+			return
+		}
 
 		if err := changePasswordRequest.Validate(context.GetString(config.HeaderLanguage)); err != nil {
 			_ = context.AbortWithError(http.StatusUnprocessableEntity, err)

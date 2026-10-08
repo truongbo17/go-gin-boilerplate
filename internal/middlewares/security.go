@@ -11,6 +11,7 @@ func SecurityHeaders() gin.HandlerFunc {
 		c.Header("X-Content-Type-Options", "nosniff")
 		c.Header("X-Frame-Options", "DENY")
 		c.Header("Referrer-Policy", "no-referrer")
+		c.Header("Cache-Control", "no-store")
 		if c.Request.TLS != nil {
 			c.Header("Strict-Transport-Security", "max-age=31536000")
 		}

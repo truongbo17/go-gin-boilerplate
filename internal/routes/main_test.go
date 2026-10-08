@@ -3,6 +3,7 @@ package routes
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -69,5 +70,42 @@ func TestLargeRequestIsRejected(t *testing.T) {
 	Router.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusRequestEntityTooLarge {
 		t.Fatalf("got %d, want 413", recorder.Code)
+	}
+}
+
+func TestChunkedLargeRequestIsRejected(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	config.EnvConfig = &config.Config{App: config.App{Env: config.LocalMode}, Cors: config.Cors{AllowOrigin: "http://localhost:3000"}, Cache: config.Cache{CacheStore: config.CacheStoreLocal}}
+	logger.LogrusLogger = logrus.New()
+	limiter.InitLimiterStore(config.CacheStoreLocal)
+	Init()
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(`{"username":"`+strings.Repeat("x", 1<<20)+`"}`))
+	request.ContentLength = -1
+	request.Header.Set("Content-Type", "application/json")
+	Router.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("got %d, want 413", recorder.Code)
+	}
+}
+
+func TestSecurityAndCORSHeaders(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	config.EnvConfig = &config.Config{App: config.App{Env: config.LocalMode}, Cors: config.Cors{AllowOrigin: "http://localhost:3000, https://client.example.com"}, Cache: config.Cache{CacheStore: config.CacheStoreLocal}}
+	logger.LogrusLogger = logrus.New()
+	limiter.InitLimiterStore(config.CacheStoreLocal)
+	Init()
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
+	request.Header.Set("Origin", "https://client.example.com")
+	Router.ServeHTTP(recorder, request)
+	if got := recorder.Header().Get("Access-Control-Allow-Origin"); got != "https://client.example.com" {
+		t.Fatalf("CORS origin = %q", got)
+	}
+	if got := recorder.Header().Get("Access-Control-Expose-Headers"); !strings.Contains(got, "X-Request-Id") && !strings.Contains(got, "X-Request-ID") {
+		t.Fatalf("request ID is not exposed: %q", got)
+	}
+	if got := recorder.Header().Get("Cache-Control"); got != "no-store" {
+		t.Fatalf("Cache-Control = %q", got)
 	}
 }

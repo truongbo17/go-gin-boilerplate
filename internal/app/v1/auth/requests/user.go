@@ -14,7 +14,9 @@ type ListUserRequest struct {
 func ListUserValidator() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var req ListUserRequest
-		_ = ctx.ShouldBind(&req)
+		if !bindRequest(ctx, &req) {
+			return
+		}
 
 		if req.Page <= 0 {
 			req.Page = 1

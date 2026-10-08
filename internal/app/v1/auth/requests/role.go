@@ -37,7 +37,9 @@ func (a ListRoleRequest) Validate(lang string) error {
 func ListRoleValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var listRoleRequest ListRoleRequest
-		_ = context.ShouldBind(&listRoleRequest)
+		if !bindRequest(context, &listRoleRequest) {
+			return
+		}
 
 		if err := listRoleRequest.Validate(context.GetString(config.HeaderLanguage)); err != nil {
 			_ = context.AbortWithError(http.StatusUnprocessableEntity, err)
@@ -75,7 +77,9 @@ func (a CreateRoleRequest) Validate(lang string) error {
 func CreateRoleValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var createRoleRequest CreateRoleRequest
-		_ = context.ShouldBind(&createRoleRequest)
+		if !bindRequest(context, &createRoleRequest) {
+			return
+		}
 
 		if err := createRoleRequest.Validate(context.GetString(config.HeaderLanguage)); err != nil {
 			_ = context.AbortWithError(http.StatusUnprocessableEntity, err)
@@ -113,7 +117,9 @@ func (a UpdateRoleRequest) Validate(lang string) error {
 func UpdateRoleValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var updateRoleRequest UpdateRoleRequest
-		_ = context.ShouldBind(&updateRoleRequest)
+		if !bindRequest(context, &updateRoleRequest) {
+			return
+		}
 
 		if err := updateRoleRequest.Validate(context.GetString(config.HeaderLanguage)); err != nil {
 			_ = context.AbortWithError(http.StatusUnprocessableEntity, err)
@@ -140,7 +146,9 @@ func (a AssignPermissionToRoleRequest) Validate(lang string) error {
 func AssignPermissionToRoleValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var assignPermissionToRoleRequest AssignPermissionToRoleRequest
-		_ = context.ShouldBind(&assignPermissionToRoleRequest)
+		if !bindRequest(context, &assignPermissionToRoleRequest) {
+			return
+		}
 
 		if err := assignPermissionToRoleRequest.Validate(context.GetString(config.HeaderLanguage)); err != nil {
 			_ = context.AbortWithError(http.StatusUnprocessableEntity, err)
@@ -167,7 +175,9 @@ func (a AssignRoleToUserRequest) Validate(lang string) error {
 func AssignRoleToUserValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var assignRoleToUserRequest AssignRoleToUserRequest
-		_ = context.ShouldBind(&assignRoleToUserRequest)
+		if !bindRequest(context, &assignRoleToUserRequest) {
+			return
+		}
 
 		if err := assignRoleToUserRequest.Validate(context.GetString(config.HeaderLanguage)); err != nil {
 			_ = context.AbortWithError(http.StatusUnprocessableEntity, err)

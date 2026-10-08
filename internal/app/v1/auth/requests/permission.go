@@ -33,7 +33,9 @@ func (a ListPermissionRequest) Validate(lang string) error {
 func ListPermissionValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var listPermissionRequest ListPermissionRequest
-		_ = context.ShouldBind(&listPermissionRequest)
+		if !bindRequest(context, &listPermissionRequest) {
+			return
+		}
 
 		if err := listPermissionRequest.Validate(context.GetString(config.HeaderLanguage)); err != nil {
 			_ = context.AbortWithError(http.StatusUnprocessableEntity, err)
@@ -70,7 +72,9 @@ func (a CreatePermissionRequest) Validate(lang string) error {
 func CreatePermissionValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var createPermissionRequest CreatePermissionRequest
-		_ = context.ShouldBind(&createPermissionRequest)
+		if !bindRequest(context, &createPermissionRequest) {
+			return
+		}
 
 		if err := createPermissionRequest.Validate(context.GetString(config.HeaderLanguage)); err != nil {
 			_ = context.AbortWithError(http.StatusUnprocessableEntity, err)
@@ -107,7 +111,9 @@ func (a UpdatePermissionRequest) Validate(lang string) error {
 func UpdatePermissionValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var updatePermissionRequest UpdatePermissionRequest
-		_ = context.ShouldBind(&updatePermissionRequest)
+		if !bindRequest(context, &updatePermissionRequest) {
+			return
+		}
 
 		if err := updatePermissionRequest.Validate(context.GetString(config.HeaderLanguage)); err != nil {
 			_ = context.AbortWithError(http.StatusUnprocessableEntity, err)
