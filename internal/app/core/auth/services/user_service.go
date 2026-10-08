@@ -9,26 +9,14 @@ import (
 	baseModel "github.com/truongbo17/go-gin-boilerplate/internal/model"
 	"github.com/truongbo17/go-gin-boilerplate/internal/repository"
 	"github.com/truongbo17/go-gin-boilerplate/internal/response"
-	"sync"
 )
 
 type UserService struct {
 	UserRepository repositories.UserRepository
 }
 
-var (
-	userService     UserService
-	userServiceOnce sync.Once
-)
-
 func NewUserService() UserService {
-	userServiceOnce.Do(func() {
-		userService = UserService{
-			UserRepository: repositories.NewUserRepository(),
-		}
-	})
-
-	return userService
+	return UserService{UserRepository: repositories.NewUserRepository()}
 }
 
 func (us *UserService) ListUsers(ctx context.Context, input types.ListUsersInput) (*response.PaginateResponse[models.User], *core.ErrorReturn) {

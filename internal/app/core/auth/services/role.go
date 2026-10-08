@@ -9,26 +9,14 @@ import (
 	"github.com/truongbo17/go-gin-boilerplate/internal/repository"
 	"github.com/truongbo17/go-gin-boilerplate/internal/response"
 	"strings"
-	"sync"
 )
 
 type RoleService struct {
 	RoleRepository repositories.RoleRepository
 }
 
-var (
-	roleService     RoleService
-	roleServiceOnce sync.Once
-)
-
 func NewRoleService() RoleService {
-	roleServiceOnce.Do(func() {
-		roleService = RoleService{
-			RoleRepository: repositories.NewRoleRepository(),
-		}
-	})
-
-	return roleService
+	return RoleService{RoleRepository: repositories.NewRoleRepository()}
 }
 
 func (rs *RoleService) ListRoles(ctx context.Context, input types.ListRolesInput) (*response.PaginateResponse[models.Role], *core.ErrorReturn) {

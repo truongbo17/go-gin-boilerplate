@@ -9,7 +9,6 @@ import (
 	"github.com/truongbo17/go-gin-boilerplate/internal/infra/database"
 	"github.com/truongbo17/go-gin-boilerplate/internal/repository"
 	"github.com/truongbo17/go-gin-boilerplate/internal/response"
-	"sync"
 
 	"gorm.io/gorm"
 )
@@ -18,19 +17,8 @@ type PermissionService struct {
 	PermissionRepository repositories.PermissionRepository
 }
 
-var (
-	permissionService     PermissionService
-	permissionServiceOnce sync.Once
-)
-
 func NewPermissionService() PermissionService {
-	permissionServiceOnce.Do(func() {
-		permissionService = PermissionService{
-			PermissionRepository: repositories.NewPermissionRepository(),
-		}
-	})
-
-	return permissionService
+	return PermissionService{PermissionRepository: repositories.NewPermissionRepository()}
 }
 
 func (ps *PermissionService) CheckPermission(ctx context.Context, userID uint, permissionSlug string) (bool, error) {

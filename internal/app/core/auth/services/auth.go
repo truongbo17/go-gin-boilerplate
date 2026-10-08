@@ -21,7 +21,6 @@ import (
 	"gorm.io/gorm"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -29,19 +28,8 @@ type AuthService struct {
 	UserRepository repositories.UserRepository
 }
 
-var (
-	authService     AuthService
-	authServiceOnce sync.Once
-)
-
 func NewAuthService() AuthService {
-	authServiceOnce.Do(func() {
-		authService = AuthService{
-			UserRepository: repositories.NewUserRepository(),
-		}
-	})
-
-	return authService
+	return AuthService{UserRepository: repositories.NewUserRepository()}
 }
 
 func (authService *AuthService) Login(ctx context.Context, input types.LoginInput) (*types.LoginOutput, *core.ErrorReturn) {
