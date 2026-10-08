@@ -57,16 +57,18 @@ func (r *BaseRequest) Do(ctx context.Context, method, urlStr string, headers map
 	if err != nil {
 		return nil, nil, err
 	}
-	defer resp.Body.Close()
+	originalBody := resp.Body
+	defer originalBody.Close()
 
-	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes+1))
+	respBody, err := io.ReadAll(io.LimitReader(originalBody, maxResponseBytes+1))
 	if err != nil {
-		return resp, nil, err
+		return nil, nil, err
 	}
 	if len(respBody) > maxResponseBytes {
-		return resp, nil, ErrResponseTooLarge
+		return nil, nil, ErrResponseTooLarge
 	}
 
+	resp.Body = io.NopCloser(bytes.NewReader(respBody))
 	return resp, respBody, nil
 }
 
