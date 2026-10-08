@@ -39,6 +39,9 @@ func TestBaseRoutes(t *testing.T) {
 		if recorder.Header().Get("X-Content-Type-Options") != "nosniff" {
 			t.Errorf("%s: missing security header", tc.path)
 		}
+		if tc.path == "/api/v1/auth/me" && recorder.Header().Get("X-RateLimit-Limit") != "300" {
+			t.Errorf("%s: missing API rate limit before authentication", tc.path)
+		}
 	}
 }
 

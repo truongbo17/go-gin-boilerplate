@@ -19,7 +19,7 @@ func LoadAuthV1(r *gin.RouterGroup) {
 			requests.LoginValidator(),
 			handler.Login,
 		)
-		private := auth.Group("", middlewares.JWTMiddleware(), middlewares.RateAPILimit())
+		private := auth.Group("", middlewares.RateAPILimit(), middlewares.JWTMiddleware())
 		private.GET("me", handler.Me)
 		private.POST("logout", handler.Logout)
 		private.POST("change-pass", requests.ChangePasswordValidator(), handler.ChangePass)
@@ -31,7 +31,7 @@ func LoadRBACV1(r *gin.RouterGroup) {
 	permissionController := controllers.NewPermissionController()
 	userController := controllers.NewUserController()
 
-	rbac := r.Group(config.PathV1).Group("rbac", middlewares.JWTMiddleware(), middlewares.RateAPILimit())
+	rbac := r.Group(config.PathV1).Group("rbac", middlewares.RateAPILimit(), middlewares.JWTMiddleware())
 	{
 		rbac.GET("/roles", middlewares.CheckPermission("role:index"), requests.ListRoleValidator(), roleController.ListRoles)
 		rbac.POST("/roles", middlewares.CheckPermission("role:create"), requests.CreateRoleValidator(), roleController.CreateRole)
