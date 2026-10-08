@@ -57,10 +57,10 @@ func ConnectMaster() error {
 		if err != nil {
 			return fmt.Errorf("get MySQL connection pool: %w", err)
 		}
-		dbConfig.SetMaxOpenConns(30)
-		dbConfig.SetMaxIdleConns(15)
-		dbConfig.SetConnMaxLifetime(15 * time.Minute)
-		dbConfig.SetConnMaxIdleTime(5 * time.Minute)
+		dbConfig.SetMaxOpenConns(configDB.MaxOpenConns)
+		dbConfig.SetMaxIdleConns(configDB.MaxIdleConns)
+		dbConfig.SetConnMaxLifetime(time.Duration(configDB.ConnMaxLifetimeMinutes) * time.Minute)
+		dbConfig.SetConnMaxIdleTime(time.Duration(configDB.ConnMaxIdleTimeMinutes) * time.Minute)
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		if err := dbConfig.PingContext(ctx); err != nil {

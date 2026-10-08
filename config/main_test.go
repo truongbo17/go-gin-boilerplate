@@ -10,7 +10,7 @@ import (
 func TestRedisRequiredOnlyWhenSelected(t *testing.T) {
 	config := &Config{
 		App:      App{Port: "8000", Env: LocalMode},
-		Database: Database{Master: Master{Host: "127.0.0.1", Port: "3306", Username: "test", Database: "test"}},
+		Database: Database{Master: Master{Host: "127.0.0.1", Port: "3306", Username: "test", Database: "test", MaxOpenConns: 30, MaxIdleConns: 15}},
 		Cache:    Cache{CacheStore: CacheStoreLocal},
 		Auth:     Auth{JWTSecretKey: strings.Repeat("x", 32)},
 	}
@@ -38,15 +38,27 @@ func TestEnvironmentOnlyConfiguration(t *testing.T) {
 	t.Setenv("DB_DATABASE", "test")
 	t.Setenv("JWT_SECRET", strings.Repeat("x", 32))
 	config := setupConfig()
-	if config.Database.Master.Username != "test" || config.App.Port != "8000" {
+	if config.Database.Master.Username != "test" || config.App.Port != "8000" || config.Database.Master.MaxOpenConns != 30 {
 		t.Fatalf("environment-only configuration was not loaded: %+v", config)
+	}
+}
+
+func TestDatabasePoolConfigurationIsValidated(t *testing.T) {
+	config := &Config{
+		App:      App{Port: "8000", Env: LocalMode},
+		Database: Database{Master: Master{Host: "127.0.0.1", Port: "3306", Username: "test", Database: "test", MaxOpenConns: 10, MaxIdleConns: 11}},
+		Cache:    Cache{CacheStore: CacheStoreLocal},
+		Auth:     Auth{JWTSecretKey: strings.Repeat("x", 32)},
+	}
+	if err := config.validate(); err == nil {
+		t.Fatal("accepted more idle than open database connections")
 	}
 }
 
 func TestTraceSampleRatioIsBounded(t *testing.T) {
 	config := &Config{
 		App:      App{Port: "8000", Env: LocalMode},
-		Database: Database{Master: Master{Host: "127.0.0.1", Port: "3306", Username: "test", Database: "test"}},
+		Database: Database{Master: Master{Host: "127.0.0.1", Port: "3306", Username: "test", Database: "test", MaxOpenConns: 30, MaxIdleConns: 15}},
 		Cache:    Cache{CacheStore: CacheStoreLocal},
 		Auth:     Auth{JWTSecretKey: strings.Repeat("x", 32)},
 		Tracer:   Tracer{SampleRatio: 1.1},

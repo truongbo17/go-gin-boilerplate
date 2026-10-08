@@ -41,6 +41,10 @@ func (config *Config) validate() error {
 		validation.Field(&config.Database.Master.Host, validation.Required, is.Host),
 		validation.Field(&config.Database.Master.Username, validation.Required),
 		validation.Field(&config.Database.Master.Database, validation.Required),
+		validation.Field(&config.Database.Master.MaxOpenConns, validation.Min(1)),
+		validation.Field(&config.Database.Master.MaxIdleConns, validation.Min(0), validation.Max(config.Database.Master.MaxOpenConns)),
+		validation.Field(&config.Database.Master.ConnMaxLifetimeMinutes, validation.Min(0)),
+		validation.Field(&config.Database.Master.ConnMaxIdleTimeMinutes, validation.Min(0)),
 
 		// Cache
 		validation.Field(&config.Cache.CacheStore, validation.In(CacheStoreLocal, CacheStoreRedis)),
@@ -72,6 +76,10 @@ func setupConfig() *Config {
 	viper.SetDefault("APP_TRUSTED_PROXIES", "")
 	viper.SetDefault("CORS_ALLOW_ORIGIN", "http://localhost:3000")
 	viper.SetDefault("CACHE_STORE", "local")
+	viper.SetDefault("DB_MAX_OPEN_CONNS", 30)
+	viper.SetDefault("DB_MAX_IDLE_CONNS", 15)
+	viper.SetDefault("DB_CONN_MAX_LIFETIME_MINUTES", 15)
+	viper.SetDefault("DB_CONN_MAX_IDLE_TIME_MINUTES", 5)
 
 	viper.SetDefault("JWT_ACCESS_EXPIRATION_MINUTES", 24*60)
 	viper.SetDefault("JWT_REFRESH_EXPIRATION_DAYS", 30)

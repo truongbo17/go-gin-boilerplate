@@ -91,6 +91,8 @@ go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
 
 `config/` maps environment variables. `internal/app/core/auth/` owns reusable auth logic; `internal/app/v1/auth/` owns HTTP routes. `internal/infra/` contains adapters. `internal/migrations/` contains auth schema migrations. The Go module path is `github.com/truongbo17/go-gin-boilerplate`.
 
+See [Go conventions](docs/go-style.md) for the project's naming, context, error, and package-boundary guidelines.
+
 ### Infrastructure included
 
 | Package | Purpose |
@@ -103,6 +105,8 @@ go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
 | `internal/infra/logger`, `tracer`, `i18n` | Logging, telemetry, and messages |
 
 Add application-specific adapters under `internal/infra/` when an actual integration needs them; keep business rules in `internal/app/core/`. `/ping` checks the HTTP process, while `/ready` returns 503 if MySQL or configured Redis is unavailable.
+
+The MySQL pool defaults to 30 open and 15 idle connections. Adjust `DB_MAX_OPEN_CONNS`, `DB_MAX_IDLE_CONNS`, `DB_CONN_MAX_LIFETIME_MINUTES`, and `DB_CONN_MAX_IDLE_TIME_MINUTES` for your database limits and workload. Set an idle or lifetime value to `0` to disable that limit. The worker stops schedules before draining in-flight tasks on SIGINT/SIGTERM; task shutdown waits up to 25 seconds.
 
 When tracing is enabled, `TRACER_SAMPLE_RATIO` controls the share of new traces sampled (default `0.1`).
 
