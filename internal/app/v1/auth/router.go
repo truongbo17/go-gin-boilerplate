@@ -14,26 +14,15 @@ func LoadAuthV1(r *gin.RouterGroup) {
 
 	auth := r.Group(config.PathV1).Group("auth")
 	{
-		auth.GET("me",
-			middlewares.JWTMiddleware(),
-			handler.Me,
-		)
 		auth.POST("login",
 			middlewares.RateLimitLogin(),
 			requests.LoginValidator(),
 			handler.Login,
 		)
-		auth.POST(
-			"logout",
-			middlewares.JWTMiddleware(),
-			handler.Logout,
-		)
-		auth.POST(
-			"/change-pass",
-			requests.ChangePasswordValidator(),
-			middlewares.JWTMiddleware(),
-			handler.ChangePass,
-		)
+		private := auth.Group("", middlewares.JWTMiddleware(), middlewares.RateAPILimit())
+		private.GET("me", handler.Me)
+		private.POST("logout", handler.Logout)
+		private.POST("change-pass", requests.ChangePasswordValidator(), handler.ChangePass)
 	}
 }
 
@@ -42,7 +31,7 @@ func LoadRBACV1(r *gin.RouterGroup) {
 	permissionController := controllers.NewPermissionController()
 	userController := controllers.NewUserController()
 
-	rbac := r.Group(config.PathV1).Group("rbac", middlewares.JWTMiddleware())
+	rbac := r.Group(config.PathV1).Group("rbac", middlewares.JWTMiddleware(), middlewares.RateAPILimit())
 	{
 		rbac.GET("/roles", middlewares.CheckPermission("role:index"), requests.ListRoleValidator(), roleController.ListRoles)
 		rbac.POST("/roles", middlewares.CheckPermission("role:create"), requests.CreateRoleValidator(), roleController.CreateRole)

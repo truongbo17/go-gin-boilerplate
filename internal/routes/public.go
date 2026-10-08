@@ -5,7 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/truongbo17/go-gin-boilerplate/config"
 	"github.com/truongbo17/go-gin-boilerplate/internal/infra/health"
-	"github.com/truongbo17/go-gin-boilerplate/internal/middlewares"
 	"github.com/truongbo17/go-gin-boilerplate/internal/response"
 	"net/http"
 	"time"
@@ -30,7 +29,6 @@ func LoadPublic(r *gin.Engine) *gin.RouterGroup {
 		c.Status(http.StatusOK)
 	})
 	public := r.Group("/")
-	public.Use(middlewares.RateLimitPublic())
 	{
 		public.GET("ping", func(context *gin.Context) {
 			context.JSON(http.StatusOK, response.BaseResponse{

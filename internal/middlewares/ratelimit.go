@@ -7,24 +7,10 @@ import (
 	"time"
 )
 
-func RateInternalLimit() gin.HandlerFunc {
-	rate := limiter.Rate{
-		Period: 1 * time.Second,
-		Limit:  1000,
-	}
-
-	return core.Limit(rate)
-}
-
-func RateLimitPublic() gin.HandlerFunc {
-	rate := limiter.Rate{
-		Period: 1 * time.Minute,
-		Limit:  100,
-	}
-
-	return core.Limit(rate)
+func RateAPILimit() gin.HandlerFunc {
+	return core.Limit("api", limiter.Rate{Period: time.Minute, Limit: 300})
 }
 
 func RateLimitLogin() gin.HandlerFunc {
-	return core.Limit(limiter.Rate{Period: 1 * time.Minute, Limit: 10})
+	return core.Limit("login", limiter.Rate{Period: time.Minute, Limit: 10})
 }
