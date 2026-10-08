@@ -10,30 +10,15 @@ import (
 	"time"
 )
 
-type Formatter struct{}
-
-func (f *Formatter) Format(entry *logrus.Entry) ([]byte, error) {
-	logLine := fmt.Sprintf("[%s] %s.%s: %s",
-		entry.Time.Format(time.DateTime),
-		config.EnvConfig.Env,
-		entry.Level.String(),
-		entry.Message,
-	)
-
-	if len(entry.Data) > 0 {
-		logLine += fmt.Sprintf(" fields=%v", entry.Data)
-	}
-
-	logLine += "\n"
-	return []byte(logLine), nil
-}
-
 func InitLog() *logrus.Logger {
 	logger := logrus.New()
 	currentDate := time.Now()
 
-	logger.SetLevel(logrus.TraceLevel)
-	logger.SetFormatter(&Formatter{})
+	logger.SetLevel(logrus.InfoLevel)
+	if config.EnvConfig.App.Env == config.DebugMode || config.EnvConfig.App.Env == config.LocalMode {
+		logger.SetLevel(logrus.DebugLevel)
+	}
+	logger.SetFormatter(&logrus.JSONFormatter{})
 
 	logFile := &lumberjack.Logger{
 		Filename: fmt.Sprintf(config.PathLog, currentDate.Format(time.DateOnly)),

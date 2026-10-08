@@ -14,8 +14,14 @@ func RequestLogger() gin.HandlerFunc {
 		requestId := context.GetString(config.HeaderRequestID)
 		clientIp := context.ClientIP()
 		userAgent := context.Request.UserAgent()
+		if len(userAgent) > 256 {
+			userAgent = userAgent[:256]
+		}
 		method := context.Request.Method
 		path := context.Request.URL.Path
+		if len(path) > 2048 {
+			path = path[:2048]
+		}
 
 		context.Next()
 
