@@ -1,5 +1,5 @@
 package database
 
-func ConnectDatabase() {
-	ConnectMaster()
+func ConnectDatabase() error {
+	return ConnectMaster()
 }

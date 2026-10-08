@@ -18,7 +18,7 @@ import (
 
 var DB *gorm.DB
 
-func ConnectMaster() {
+func ConnectMaster() error {
 	configDB := config.EnvConfig.Master
 	if configDB.Username != "" {
 		dsn := (&mysqldriver.Config{
@@ -50,12 +50,12 @@ func ConnectMaster() {
 
 		db, err := gorm.Open(gormmysql.Open(dsn), configMysql)
 		if err != nil {
-			panic(fmt.Errorf("connect MySQL: %w", err))
+			return fmt.Errorf("connect MySQL: %w", err)
 		}
 
 		dbConfig, err := db.DB()
 		if err != nil {
-			panic(fmt.Errorf("get MySQL connection pool: %w", err))
+			return fmt.Errorf("get MySQL connection pool: %w", err)
 		}
 		dbConfig.SetMaxOpenConns(30)
 		dbConfig.SetMaxIdleConns(15)
@@ -64,15 +64,18 @@ func ConnectMaster() {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		if err := dbConfig.PingContext(ctx); err != nil {
-			panic(fmt.Errorf("ping MySQL: %w", err))
+			_ = dbConfig.Close()
+			return fmt.Errorf("ping MySQL: %w", err)
 		}
 
 		if err = db.Use(otelgorm.NewPlugin()); err != nil {
-			panic(err)
+			_ = dbConfig.Close()
+			return fmt.Errorf("instrument MySQL: %w", err)
 		}
 
 		DB = db
 
 		fmt.Println("Success connected to Mysql")
 	}
+	return nil
 }

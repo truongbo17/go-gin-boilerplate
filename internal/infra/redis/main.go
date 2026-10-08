@@ -11,7 +11,7 @@ import (
 
 var ClientRedis *redis.Client
 
-func ConnectRedis() {
+func ConnectRedis() error {
 	cacheConfig := config.EnvConfig.Cache
 	if cacheConfig.CacheStore == config.CacheStoreRedis {
 		redisClient := redis.NewClient(&redis.Options{
@@ -22,22 +22,22 @@ func ConnectRedis() {
 		})
 
 		if err := redisotel.InstrumentTracing(redisClient); err != nil {
-			panic(err)
+			_ = redisClient.Close()
+			return fmt.Errorf("instrument Redis: %w", err)
 		}
-
+		if err := checkRedisConnection(redisClient); err != nil {
+			_ = redisClient.Close()
+			return fmt.Errorf("connect Redis: %w", err)
+		}
 		ClientRedis = redisClient
-
-		checkRedisConnection(redisClient)
 
 		fmt.Println("Success connect to Redis.")
 	}
+	return nil
 }
 
-func checkRedisConnection(client *redis.Client) {
+func checkRedisConnection(client *redis.Client) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	err := client.Ping(ctx).Err()
-	if err != nil {
-		panic(err)
-	}
+	return client.Ping(ctx).Err()
 }

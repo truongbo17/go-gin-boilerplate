@@ -11,18 +11,19 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/semconv/v1.30.0"
-	"log"
+	"time"
 )
 
 var AMPTracerProvider *trace.TracerProvider
 
-func InitTracerOTEL() {
+func InitTracerOTEL() error {
 	configTracer := config.EnvConfig.Tracer
 
 	if !configTracer.Enable {
-		return
+		return nil
 	}
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	exporter, err := otlptracehttp.New(ctx,
 		otlptracehttp.WithEndpoint(configTracer.Url),
@@ -31,7 +32,7 @@ func InitTracerOTEL() {
 		}),
 	)
 	if err != nil {
-		log.Fatalf("failed to create exporter: %v", err)
+		return fmt.Errorf("create trace exporter: %w", err)
 	}
 
 	re := resource.NewWithAttributes(
@@ -54,13 +55,12 @@ func InitTracerOTEL() {
 	AMPTracerProvider = tp
 
 	fmt.Println("Success init tracer OTEL")
+	return nil
 }
 
-func DownAMPTracerProvider() {
+func Shutdown(ctx context.Context) error {
 	if AMPTracerProvider == nil {
-		return
+		return nil
 	}
-	if err := AMPTracerProvider.Shutdown(context.Background()); err != nil {
-		log.Printf("Failed to shutdown TracerProvider: %v", err)
-	}
+	return AMPTracerProvider.Shutdown(ctx)
 }

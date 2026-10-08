@@ -1,6 +1,11 @@
 package cmd
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
 	"github.com/truongbo17/go-gin-boilerplate/cmd/cli"
@@ -26,11 +31,17 @@ var rootCmd = &cobra.Command{
 			gin.SetMode(gin.ReleaseMode)
 		}
 		logger.Init()
-		redis.ConnectRedis()
+		if err := tracer.InitTracerOTEL(); err != nil {
+			return err
+		}
+		if err := redis.ConnectRedis(); err != nil {
+			return err
+		}
 		cache.InitCache()
-		database.ConnectDatabase()
+		if err := database.ConnectDatabase(); err != nil {
+			return err
+		}
 		httpclient.InitBaseRequest()
-		tracer.InitTracerOTEL()
 		if config.EnvConfig.Cache.CacheStore == config.CacheStoreRedis {
 			client.InitClient()
 		}
@@ -42,20 +53,35 @@ func init() {
 	rootCmd.AddCommand(StartServerCmd, StartWorkerCmd, cli.VersionCmd, cli.MigrateCmd, cli.CreateUserCmd)
 }
 
-func Execute() error {
+func Execute() (err error) {
 	defer func() {
+		var cleanupErrors []error
+		if httpclient.Request != nil {
+			httpclient.Request.Client.CloseIdleConnections()
+		}
 		if client.WorkerClient != nil {
-			_ = client.WorkerClient.Close()
+			if closeErr := client.WorkerClient.Close(); closeErr != nil {
+				cleanupErrors = append(cleanupErrors, fmt.Errorf("close worker client: %w", closeErr))
+			}
 		}
 		if redis.ClientRedis != nil {
-			_ = redis.ClientRedis.Close()
+			if closeErr := redis.ClientRedis.Close(); closeErr != nil {
+				cleanupErrors = append(cleanupErrors, fmt.Errorf("close Redis: %w", closeErr))
+			}
 		}
 		if database.DB != nil {
 			if pool, err := database.DB.DB(); err == nil {
-				_ = pool.Close()
+				if closeErr := pool.Close(); closeErr != nil {
+					cleanupErrors = append(cleanupErrors, fmt.Errorf("close MySQL: %w", closeErr))
+				}
 			}
 		}
-		tracer.DownAMPTracerProvider()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if closeErr := tracer.Shutdown(ctx); closeErr != nil {
+			cleanupErrors = append(cleanupErrors, fmt.Errorf("flush traces: %w", closeErr))
+		}
+		err = errors.Join(append([]error{err}, cleanupErrors...)...)
 	}()
 	return rootCmd.Execute()
 }
