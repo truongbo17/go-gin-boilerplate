@@ -10,6 +10,7 @@ import (
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/services"
 	coreworker "github.com/truongbo17/go-gin-boilerplate/internal/app/core/worker"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/v1/auth"
+	graphqlmodule "github.com/truongbo17/go-gin-boilerplate/internal/app/v1/graphql"
 	"github.com/truongbo17/go-gin-boilerplate/internal/health"
 	"github.com/truongbo17/go-gin-boilerplate/internal/middlewares"
 	"github.com/truongbo17/go-gin-boilerplate/internal/middlewares/limiter"
@@ -59,6 +60,8 @@ func New(options Options) (*gin.Engine, error) {
 	registerOpenAPI(router)
 	api := router.Group("/api")
 	authModule.RegisterRoutes(api)
-	registerGraphQL(api, authModule, options)
+	graphqlmodule.NewModule(graphqlmodule.Dependencies{
+		DB: options.DB, Auth: authModule.AuthMiddleware(), Limiter: options.Limiter, Env: options.Config.App.Env, Logger: options.Logger,
+	}).RegisterRoutes(api)
 	return router, nil
 }

@@ -5,7 +5,18 @@ type User {
   status: Int!
 }
 
+type EnumOption { value: Int!, code: String!, label: String! }
+type EnumGroup { key: String!, options: [EnumOption!]! }
+type EntityOption { id: ID!, code: String!, name: String!, label: String!, extra: String }
+type PageMeta { page: Int!, per_page: Int!, last_page: Int!, total: Int! }
+type EntityPage { key: String!, options: [EntityOption!]!, meta: PageMeta! }
+
 type Query {
   "The currently authenticated user."
   me: User!
+  "Keys in the public, in-memory enum catalog."
+  enum_keys: [String!]!
+  enum_options(key: String!): EnumGroup
+  "Paginated options; each key requires its RBAC read permission."
+  entity_options(key: String!, keyword: String = "", page: Int = 1, per_page: Int = 20): EntityPage!
 }

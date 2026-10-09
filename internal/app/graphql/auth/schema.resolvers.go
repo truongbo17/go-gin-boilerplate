@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/models"
+	coregraphql "github.com/truongbo17/go-gin-boilerplate/internal/app/core/graphql"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/graphql/auth/generated"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/graphql/auth/model"
 )
@@ -27,6 +28,64 @@ func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 		Email:    user.Email,
 		Status:   int(user.Status),
 	}, nil
+}
+
+// EnumKeys is the resolver for the enum_keys field.
+func (r *queryResolver) EnumKeys(ctx context.Context) ([]string, error) {
+	groups := coregraphql.Catalog()
+	keys := make([]string, 0, len(groups))
+	for _, group := range groups {
+		keys = append(keys, group.Key)
+	}
+	return keys, nil
+}
+
+// EnumOptions is the resolver for the enum_options field.
+func (r *queryResolver) EnumOptions(ctx context.Context, key string) (*model.EnumGroup, error) {
+	group, ok := coregraphql.EnumByKey(key)
+	if !ok {
+		return nil, nil
+	}
+	options := make([]*model.EnumOption, 0, len(group.Options))
+	for _, option := range group.Options {
+		options = append(options, &model.EnumOption{Value: option.Value, Code: option.Code, Label: option.Label})
+	}
+	return &model.EnumGroup{Key: group.Key, Options: options}, nil
+}
+
+// EntityOptions is the resolver for the entity_options field.
+func (r *queryResolver) EntityOptions(ctx context.Context, key string, keyword *string, page *int, perPage *int) (*model.EntityPage, error) {
+	user, ok := ctx.Value(userKey{}).(*models.User)
+	if !ok || user == nil {
+		return nil, errors.New("authentication required")
+	}
+	search, number, size := "", 1, 20
+	if keyword != nil {
+		search = *keyword
+	}
+	if page != nil {
+		number = *page
+	}
+	if perPage != nil {
+		size = *perPage
+	}
+	result, err := r.Metadata.EntityOptions(ctx, user.ID, key, search, number, size)
+	if err != nil {
+		switch {
+		case errors.Is(err, coregraphql.ErrForbidden), errors.Is(err, coregraphql.ErrUnsupportedKey), errors.Is(err, coregraphql.ErrInvalidInput):
+			return nil, err
+		default:
+			if r.Logger != nil {
+				r.Logger.WithError(err).Error("graphql entity options failed")
+			}
+			return nil, errors.New("entity options unavailable")
+		}
+	}
+	options := make([]*model.EntityOption, 0, len(result.Options))
+	for _, option := range result.Options {
+		options = append(options, &model.EntityOption{ID: option.ID, Code: option.Code, Name: option.Name, Label: option.Label, Extra: option.Extra})
+	}
+	return &model.EntityPage{Key: result.Key, Options: options, Meta: &model.PageMeta{Page: result.Meta.Page, PerPage: result.Meta.PerPage, LastPage: result.Meta.LastPage, Total: result.Meta.Total}}, nil
 }
 
 // Query returns generated.QueryResolver implementation.

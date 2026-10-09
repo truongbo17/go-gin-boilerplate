@@ -35,8 +35,43 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	EntityOption struct {
+		Code  func(childComplexity int) int
+		Extra func(childComplexity int) int
+		ID    func(childComplexity int) int
+		Label func(childComplexity int) int
+		Name  func(childComplexity int) int
+	}
+
+	EntityPage struct {
+		Key     func(childComplexity int) int
+		Meta    func(childComplexity int) int
+		Options func(childComplexity int) int
+	}
+
+	EnumGroup struct {
+		Key     func(childComplexity int) int
+		Options func(childComplexity int) int
+	}
+
+	EnumOption struct {
+		Code  func(childComplexity int) int
+		Label func(childComplexity int) int
+		Value func(childComplexity int) int
+	}
+
+	PageMeta struct {
+		LastPage func(childComplexity int) int
+		Page     func(childComplexity int) int
+		PerPage  func(childComplexity int) int
+		Total    func(childComplexity int) int
+	}
+
 	Query struct {
-		Me func(childComplexity int) int
+		EntityOptions func(childComplexity int, key string, keyword *string, page *int, perPage *int) int
+		EnumKeys      func(childComplexity int) int
+		EnumOptions   func(childComplexity int, key string) int
+		Me            func(childComplexity int) int
 	}
 
 	User struct {
@@ -53,6 +88,9 @@ type ComplexityRoot struct {
 
 type QueryResolver interface {
 	Me(ctx context.Context) (*model.User, error)
+	EnumKeys(ctx context.Context) ([]string, error)
+	EnumOptions(ctx context.Context, key string) (*model.EnumGroup, error)
+	EntityOptions(ctx context.Context, key string, keyword *string, page *int, perPage *int) (*model.EntityPage, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -72,6 +110,142 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	ec := newExecutionContext(nil, e, nil)
 	_ = ec
 	switch typeName + "." + field {
+
+	case "EntityOption.code":
+		if e.ComplexityRoot.EntityOption.Code == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EntityOption.Code(childComplexity), true
+	case "EntityOption.extra":
+		if e.ComplexityRoot.EntityOption.Extra == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EntityOption.Extra(childComplexity), true
+	case "EntityOption.id":
+		if e.ComplexityRoot.EntityOption.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EntityOption.ID(childComplexity), true
+	case "EntityOption.label":
+		if e.ComplexityRoot.EntityOption.Label == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EntityOption.Label(childComplexity), true
+	case "EntityOption.name":
+		if e.ComplexityRoot.EntityOption.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EntityOption.Name(childComplexity), true
+
+	case "EntityPage.key":
+		if e.ComplexityRoot.EntityPage.Key == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EntityPage.Key(childComplexity), true
+	case "EntityPage.meta":
+		if e.ComplexityRoot.EntityPage.Meta == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EntityPage.Meta(childComplexity), true
+	case "EntityPage.options":
+		if e.ComplexityRoot.EntityPage.Options == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EntityPage.Options(childComplexity), true
+
+	case "EnumGroup.key":
+		if e.ComplexityRoot.EnumGroup.Key == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EnumGroup.Key(childComplexity), true
+	case "EnumGroup.options":
+		if e.ComplexityRoot.EnumGroup.Options == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EnumGroup.Options(childComplexity), true
+
+	case "EnumOption.code":
+		if e.ComplexityRoot.EnumOption.Code == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EnumOption.Code(childComplexity), true
+	case "EnumOption.label":
+		if e.ComplexityRoot.EnumOption.Label == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EnumOption.Label(childComplexity), true
+	case "EnumOption.value":
+		if e.ComplexityRoot.EnumOption.Value == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EnumOption.Value(childComplexity), true
+
+	case "PageMeta.last_page":
+		if e.ComplexityRoot.PageMeta.LastPage == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PageMeta.LastPage(childComplexity), true
+	case "PageMeta.page":
+		if e.ComplexityRoot.PageMeta.Page == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PageMeta.Page(childComplexity), true
+	case "PageMeta.per_page":
+		if e.ComplexityRoot.PageMeta.PerPage == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PageMeta.PerPage(childComplexity), true
+	case "PageMeta.total":
+		if e.ComplexityRoot.PageMeta.Total == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PageMeta.Total(childComplexity), true
+
+	case "Query.entity_options":
+		if e.ComplexityRoot.Query.EntityOptions == nil {
+			break
+		}
+
+		args, err := ec.field_Query_entity_options_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.EntityOptions(childComplexity, args["key"].(string), args["keyword"].(*string), args["page"].(*int), args["per_page"].(*int)), true
+	case "Query.enum_keys":
+		if e.ComplexityRoot.Query.EnumKeys == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.EnumKeys(childComplexity), true
+	case "Query.enum_options":
+		if e.ComplexityRoot.Query.EnumOptions == nil {
+			break
+		}
+
+		args, err := ec.field_Query_enum_options_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.EnumOptions(childComplexity, args["key"].(string)), true
 
 	case "Query.me":
 		if e.ComplexityRoot.Query.Me == nil {
@@ -179,9 +353,20 @@ var sources = []*ast.Source{
   status: Int!
 }
 
+type EnumOption { value: Int!, code: String!, label: String! }
+type EnumGroup { key: String!, options: [EnumOption!]! }
+type EntityOption { id: ID!, code: String!, name: String!, label: String!, extra: String }
+type PageMeta { page: Int!, per_page: Int!, last_page: Int!, total: Int! }
+type EntityPage { key: String!, options: [EntityOption!]!, meta: PageMeta! }
+
 type Query {
   "The currently authenticated user."
   me: User!
+  "Keys in the public, in-memory enum catalog."
+  enum_keys: [String!]!
+  enum_options(key: String!): EnumGroup
+  "Paginated options; each key requires its RBAC read permission."
+  entity_options(key: String!, keyword: String = "", page: Int = 1, per_page: Int = 20): EntityPage!
 }
 `, BuiltIn: false},
 }
@@ -190,6 +375,70 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // childFields_* functions provide shared child field context lookups.
 // Each function is generated once per unique object type, deduplicating the
 // switch statements that were previously inlined in every fieldContext_* function.
+
+func (ec *executionContext) childFields_EntityOption(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_EntityOption_id(ctx, field)
+	case "code":
+		return ec.fieldContext_EntityOption_code(ctx, field)
+	case "name":
+		return ec.fieldContext_EntityOption_name(ctx, field)
+	case "label":
+		return ec.fieldContext_EntityOption_label(ctx, field)
+	case "extra":
+		return ec.fieldContext_EntityOption_extra(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type EntityOption", field.Name)
+}
+
+func (ec *executionContext) childFields_EntityPage(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "key":
+		return ec.fieldContext_EntityPage_key(ctx, field)
+	case "options":
+		return ec.fieldContext_EntityPage_options(ctx, field)
+	case "meta":
+		return ec.fieldContext_EntityPage_meta(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type EntityPage", field.Name)
+}
+
+func (ec *executionContext) childFields_EnumGroup(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "key":
+		return ec.fieldContext_EnumGroup_key(ctx, field)
+	case "options":
+		return ec.fieldContext_EnumGroup_options(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type EnumGroup", field.Name)
+}
+
+func (ec *executionContext) childFields_EnumOption(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "value":
+		return ec.fieldContext_EnumOption_value(ctx, field)
+	case "code":
+		return ec.fieldContext_EnumOption_code(ctx, field)
+	case "label":
+		return ec.fieldContext_EnumOption_label(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type EnumOption", field.Name)
+}
+
+func (ec *executionContext) childFields_PageMeta(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "page":
+		return ec.fieldContext_PageMeta_page(ctx, field)
+	case "per_page":
+		return ec.fieldContext_PageMeta_per_page(ctx, field)
+	case "last_page":
+		return ec.fieldContext_PageMeta_last_page(ctx, field)
+	case "total":
+		return ec.fieldContext_PageMeta_total(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type PageMeta", field.Name)
+}
 
 func (ec *executionContext) childFields_User(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
@@ -335,6 +584,58 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_entity_options_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "key",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["key"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "keyword",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["keyword"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["page"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "per_page",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["per_page"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_enum_options_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "key",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["key"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field___Directive_args_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -395,6 +696,424 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _EntityOption_id(ctx context.Context, field graphql.CollectedField, obj *model.EntityOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EntityOption_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EntityOption_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EntityOption", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _EntityOption_code(ctx context.Context, field graphql.CollectedField, obj *model.EntityOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EntityOption_code(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Code, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EntityOption_code(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EntityOption", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _EntityOption_name(ctx context.Context, field graphql.CollectedField, obj *model.EntityOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EntityOption_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EntityOption_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EntityOption", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _EntityOption_label(ctx context.Context, field graphql.CollectedField, obj *model.EntityOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EntityOption_label(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Label, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EntityOption_label(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EntityOption", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _EntityOption_extra(ctx context.Context, field graphql.CollectedField, obj *model.EntityOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EntityOption_extra(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Extra, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_EntityOption_extra(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EntityOption", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _EntityPage_key(ctx context.Context, field graphql.CollectedField, obj *model.EntityPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EntityPage_key(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Key, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EntityPage_key(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EntityPage", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _EntityPage_options(ctx context.Context, field graphql.CollectedField, obj *model.EntityPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EntityPage_options(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Options, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.EntityOption) graphql.Marshaler {
+			return ec.marshalNEntityOption2ᚕᚖgithubᚗcomᚋtruongbo17ᚋgoᚑginᚑboilerplateᚋinternalᚋappᚋgraphqlᚋauthᚋmodelᚐEntityOptionᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EntityPage_options(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EntityPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_EntityOption(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EntityPage_meta(ctx context.Context, field graphql.CollectedField, obj *model.EntityPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EntityPage_meta(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Meta, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.PageMeta) graphql.Marshaler {
+			return ec.marshalNPageMeta2ᚖgithubᚗcomᚋtruongbo17ᚋgoᚑginᚑboilerplateᚋinternalᚋappᚋgraphqlᚋauthᚋmodelᚐPageMeta(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EntityPage_meta(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EntityPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_PageMeta(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnumGroup_key(ctx context.Context, field graphql.CollectedField, obj *model.EnumGroup) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EnumGroup_key(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Key, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EnumGroup_key(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EnumGroup", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _EnumGroup_options(ctx context.Context, field graphql.CollectedField, obj *model.EnumGroup) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EnumGroup_options(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Options, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.EnumOption) graphql.Marshaler {
+			return ec.marshalNEnumOption2ᚕᚖgithubᚗcomᚋtruongbo17ᚋgoᚑginᚑboilerplateᚋinternalᚋappᚋgraphqlᚋauthᚋmodelᚐEnumOptionᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EnumGroup_options(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnumGroup",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_EnumOption(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnumOption_value(ctx context.Context, field graphql.CollectedField, obj *model.EnumOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EnumOption_value(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Value, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EnumOption_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EnumOption", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _EnumOption_code(ctx context.Context, field graphql.CollectedField, obj *model.EnumOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EnumOption_code(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Code, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EnumOption_code(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EnumOption", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _EnumOption_label(ctx context.Context, field graphql.CollectedField, obj *model.EnumOption) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_EnumOption_label(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Label, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_EnumOption_label(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("EnumOption", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _PageMeta_page(ctx context.Context, field graphql.CollectedField, obj *model.PageMeta) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PageMeta_page(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Page, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_PageMeta_page(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PageMeta", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _PageMeta_per_page(ctx context.Context, field graphql.CollectedField, obj *model.PageMeta) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PageMeta_per_page(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PerPage, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_PageMeta_per_page(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PageMeta", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _PageMeta_last_page(ctx context.Context, field graphql.CollectedField, obj *model.PageMeta) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PageMeta_last_page(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.LastPage, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_PageMeta_last_page(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PageMeta", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _PageMeta_total(ctx context.Context, field graphql.CollectedField, obj *model.PageMeta) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PageMeta_total(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Total, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_PageMeta_total(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PageMeta", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
 func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -423,6 +1142,117 @@ func (ec *executionContext) fieldContext_Query_me(_ context.Context, field graph
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_User(ctx, field)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_enum_keys(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_enum_keys(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().EnumKeys(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []string) graphql.Marshaler {
+			return ec.marshalNString2ᚕstringᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_enum_keys(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Query", field, true, true, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Query_enum_options(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_enum_options(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().EnumOptions(ctx, fc.Args["key"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.EnumGroup) graphql.Marshaler {
+			return ec.marshalOEnumGroup2ᚖgithubᚗcomᚋtruongbo17ᚋgoᚑginᚑboilerplateᚋinternalᚋappᚋgraphqlᚋauthᚋmodelᚐEnumGroup(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_enum_options(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_EnumGroup(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_enum_options_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_entity_options(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_entity_options(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().EntityOptions(ctx, fc.Args["key"].(string), fc.Args["keyword"].(*string), fc.Args["page"].(*int), fc.Args["per_page"].(*int))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.EntityPage) graphql.Marshaler {
+			return ec.marshalNEntityPage2ᚖgithubᚗcomᚋtruongbo17ᚋgoᚑginᚑboilerplateᚋinternalᚋappᚋgraphqlᚋauthᚋmodelᚐEntityPage(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_entity_options(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_EntityPage(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_entity_options_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -1662,6 +2492,256 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** object.gotpl ****************************
 
+var entityOptionImplementors = []string{"EntityOption"}
+
+func (ec *executionContext) _EntityOption(ctx context.Context, sel ast.SelectionSet, obj *model.EntityOption) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, entityOptionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EntityOption")
+		case "id":
+			out.Values[i] = ec._EntityOption_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "code":
+			out.Values[i] = ec._EntityOption_code(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._EntityOption_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "label":
+			out.Values[i] = ec._EntityOption_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "extra":
+			out.Values[i] = ec._EntityOption_extra(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var entityPageImplementors = []string{"EntityPage"}
+
+func (ec *executionContext) _EntityPage(ctx context.Context, sel ast.SelectionSet, obj *model.EntityPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, entityPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EntityPage")
+		case "key":
+			out.Values[i] = ec._EntityPage_key(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "options":
+			out.Values[i] = ec._EntityPage_options(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "meta":
+			out.Values[i] = ec._EntityPage_meta(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var enumGroupImplementors = []string{"EnumGroup"}
+
+func (ec *executionContext) _EnumGroup(ctx context.Context, sel ast.SelectionSet, obj *model.EnumGroup) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, enumGroupImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EnumGroup")
+		case "key":
+			out.Values[i] = ec._EnumGroup_key(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "options":
+			out.Values[i] = ec._EnumGroup_options(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var enumOptionImplementors = []string{"EnumOption"}
+
+func (ec *executionContext) _EnumOption(ctx context.Context, sel ast.SelectionSet, obj *model.EnumOption) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, enumOptionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EnumOption")
+		case "value":
+			out.Values[i] = ec._EnumOption_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "code":
+			out.Values[i] = ec._EnumOption_code(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "label":
+			out.Values[i] = ec._EnumOption_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var pageMetaImplementors = []string{"PageMeta"}
+
+func (ec *executionContext) _PageMeta(ctx context.Context, sel ast.SelectionSet, obj *model.PageMeta) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, pageMetaImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PageMeta")
+		case "page":
+			out.Values[i] = ec._PageMeta_page(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "per_page":
+			out.Values[i] = ec._PageMeta_per_page(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "last_page":
+			out.Values[i] = ec._PageMeta_last_page(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "total":
+			out.Values[i] = ec._PageMeta_total(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -1692,6 +2772,72 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_me(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "enum_keys":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_enum_keys(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "enum_options":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_enum_options(ctx, field)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "entity_options":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_entity_options(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -2200,6 +3346,68 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) marshalNEntityOption2ᚕᚖgithubᚗcomᚋtruongbo17ᚋgoᚑginᚑboilerplateᚋinternalᚋappᚋgraphqlᚋauthᚋmodelᚐEntityOptionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EntityOption) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNEntityOption2ᚖgithubᚗcomᚋtruongbo17ᚋgoᚑginᚑboilerplateᚋinternalᚋappᚋgraphqlᚋauthᚋmodelᚐEntityOption(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNEntityOption2ᚖgithubᚗcomᚋtruongbo17ᚋgoᚑginᚑboilerplateᚋinternalᚋappᚋgraphqlᚋauthᚋmodelᚐEntityOption(ctx context.Context, sel ast.SelectionSet, v *model.EntityOption) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._EntityOption(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNEntityPage2ᚖgithubᚗcomᚋtruongbo17ᚋgoᚑginᚑboilerplateᚋinternalᚋappᚋgraphqlᚋauthᚋmodelᚐEntityPage(ctx context.Context, sel ast.SelectionSet, v *model.EntityPage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._EntityPage(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNEnumOption2ᚕᚖgithubᚗcomᚋtruongbo17ᚋgoᚑginᚑboilerplateᚋinternalᚋappᚋgraphqlᚋauthᚋmodelᚐEnumOptionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EnumOption) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNEnumOption2ᚖgithubᚗcomᚋtruongbo17ᚋgoᚑginᚑboilerplateᚋinternalᚋappᚋgraphqlᚋauthᚋmodelᚐEnumOption(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNEnumOption2ᚖgithubᚗcomᚋtruongbo17ᚋgoᚑginᚑboilerplateᚋinternalᚋappᚋgraphqlᚋauthᚋmodelᚐEnumOption(ctx context.Context, sel ast.SelectionSet, v *model.EnumOption) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._EnumOption(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalID(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2232,6 +3440,16 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
+func (ec *executionContext) marshalNPageMeta2ᚖgithubᚗcomᚋtruongbo17ᚋgoᚑginᚑboilerplateᚋinternalᚋappᚋgraphqlᚋauthᚋmodelᚐPageMeta(ctx context.Context, sel ast.SelectionSet, v *model.PageMeta) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PageMeta(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2246,6 +3464,35 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋtruongbo17ᚋgoᚑginᚑboilerplateᚋinternalᚋappᚋgraphqlᚋauthᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
@@ -2425,6 +3672,31 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	_ = sel
 	_ = ctx
 	res := graphql.MarshalBoolean(*v)
+	return res
+}
+
+func (ec *executionContext) marshalOEnumGroup2ᚖgithubᚗcomᚋtruongbo17ᚋgoᚑginᚑboilerplateᚋinternalᚋappᚋgraphqlᚋauthᚋmodelᚐEnumGroup(ctx context.Context, sel ast.SelectionSet, v *model.EnumGroup) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._EnumGroup(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalInt(*v)
 	return res
 }
 

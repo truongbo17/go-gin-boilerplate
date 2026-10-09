@@ -383,7 +383,7 @@ paths:
     post:
       tags: [GraphQL]
       summary: Execute an authenticated GraphQL query
-      description: See internal/app/graphql/auth/schema.graphqls for the schema.
+      description: See internal/app/graphql/auth/schema.graphqls for the schema. Body limit is 64 KiB; execution timeout is 2 seconds.
       security: [{ bearerAuth: [] }]
       requestBody:
         required: true
@@ -393,6 +393,45 @@ paths:
       responses:
         '200': { description: GraphQL data or GraphQL errors }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '413': { description: Request body exceeds 64 KiB }
+  /api/v1/public/enum-options/{key}:
+    get:
+      tags: [GraphQL]
+      summary: Get options for a public enum key
+      security: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema: { type: string, example: user_status }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { description: Unknown enum key }
+  /api/v1/graphql/entity-options:
+    get:
+      tags: [GraphQL]
+      summary: Get paginated entity options
+      description: Keys users, roles and permissions require their matching RBAC read permission.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: key
+          in: query
+          required: true
+          schema: { type: string, enum: [users, roles, permissions] }
+        - name: keyword
+          in: query
+          schema: { type: string, maxLength: 100 }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: per_page
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { description: Invalid key or pagination }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 components:
   securitySchemes:
     bearerAuth:

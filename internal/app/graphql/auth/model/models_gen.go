@@ -2,6 +2,38 @@
 
 package model
 
+type EntityOption struct {
+	ID    string  `json:"id"`
+	Code  string  `json:"code"`
+	Name  string  `json:"name"`
+	Label string  `json:"label"`
+	Extra *string `json:"extra,omitempty"`
+}
+
+type EntityPage struct {
+	Key     string          `json:"key"`
+	Options []*EntityOption `json:"options"`
+	Meta    *PageMeta       `json:"meta"`
+}
+
+type EnumGroup struct {
+	Key     string        `json:"key"`
+	Options []*EnumOption `json:"options"`
+}
+
+type EnumOption struct {
+	Value int    `json:"value"`
+	Code  string `json:"code"`
+	Label string `json:"label"`
+}
+
+type PageMeta struct {
+	Page     int `json:"page"`
+	PerPage  int `json:"per_page"`
+	LastPage int `json:"last_page"`
+	Total    int `json:"total"`
+}
+
 type Query struct {
 }
 
