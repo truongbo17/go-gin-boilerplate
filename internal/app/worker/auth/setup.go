@@ -13,24 +13,24 @@ import (
 )
 
 type Dependencies struct {
-	Mail         config.Mail
-	JWTSecretKey string
 	DB           *gorm.DB
 	Redis        *redisclient.Client
+	Mail         config.Mail
+	JWTSecretKey string
 }
 
 // NewHandler wires the auth worker adapter to its core mail service.
-func NewHandler(deps Dependencies) (*Handler, error) {
-	if deps.DB == nil || deps.Redis == nil {
+func NewHandler(params Dependencies) (*Handler, error) {
+	if params.DB == nil || params.Redis == nil {
 		return nil, errors.New("auth mail worker requires a database and Redis")
 	}
-	users := authrepository.NewUserRepository(deps.DB)
+	users := authrepository.NewUserRepository(params.DB)
 	return &Handler{Mail: services.MailService{
 		Users: users,
-		Tokens: new(services.NewAuthService(users, cache.NewRedis(deps.Redis), services.AuthSettings{
-			JWTSecretKey: deps.JWTSecretKey,
+		Tokens: new(services.NewAuthService(users, cache.NewRedis(params.Redis), services.AuthSettings{
+			JWTSecretKey: params.JWTSecretKey,
 		})),
-		Sender:   mail.Sender{Config: deps.Mail},
-		ResetURL: deps.Mail.ResetURL,
+		Sender:   mail.Sender{Config: params.Mail},
+		ResetURL: params.Mail.ResetURL,
 	}}, nil
 }

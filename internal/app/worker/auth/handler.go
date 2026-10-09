@@ -20,7 +20,14 @@ type Handler struct {
 	Mail Mailer
 }
 
-func (handler Handler) Welcome(ctx context.Context, task *asynq.Task) error {
+func (handler *Handler) Handlers() map[string]asynq.HandlerFunc {
+	return map[string]asynq.HandlerFunc{
+		string(coreworker.TypeWelcomeEmail):       handler.Welcome,
+		string(coreworker.TypePasswordResetEmail): handler.PasswordReset,
+	}
+}
+
+func (handler *Handler) Welcome(ctx context.Context, task *asynq.Task) error {
 	var payload coreworker.WelcomeEmailParams
 	if err := json.Unmarshal(task.Payload(), &payload); err != nil || payload.UserID == 0 {
 		return fmt.Errorf("invalid welcome task: %w", asynq.SkipRetry)
@@ -28,7 +35,7 @@ func (handler Handler) Welcome(ctx context.Context, task *asynq.Task) error {
 	return handleMailError(handler.Mail.SendWelcome(ctx, payload.UserID))
 }
 
-func (handler Handler) PasswordReset(ctx context.Context, task *asynq.Task) error {
+func (handler *Handler) PasswordReset(ctx context.Context, task *asynq.Task) error {
 	var payload coreworker.PasswordResetEmailParams
 	if err := json.Unmarshal(task.Payload(), &payload); err != nil || payload.Email == "" {
 		return fmt.Errorf("invalid password reset task: %w", asynq.SkipRetry)

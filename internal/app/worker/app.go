@@ -1,6 +1,8 @@
 package worker
 
 import (
+	"fmt"
+
 	redisclient "github.com/redis/go-redis/v9"
 	"github.com/truongbo17/go-gin-boilerplate/config"
 	authworker "github.com/truongbo17/go-gin-boilerplate/internal/app/worker/auth"
@@ -8,27 +10,20 @@ import (
 	"gorm.io/gorm"
 )
 
-// Dependencies are process resources shared by worker modules.
-type Dependencies struct {
-	Config config.Config
-	DB     *gorm.DB
-	Redis  *redisclient.Client
-}
-
-// New builds enabled worker modules and registers their handlers and schedules.
-func New(deps Dependencies) (register.Registry, error) {
-	var handlers register.Handlers
-	if deps.Config.Mail.Enabled {
-		authHandler, err := authworker.NewHandler(authworker.Dependencies{
-			Mail:         deps.Config.Mail,
-			JWTSecretKey: deps.Config.Auth.JWTSecretKey,
-			DB:           deps.DB,
-			Redis:        deps.Redis,
+// New lists enabled worker features and builds their handler registry.
+func New(cfg config.Config, db *gorm.DB, redis *redisclient.Client) (register.Registry, error) {
+	var modules []register.Module
+	if cfg.Mail.Enabled {
+		handler, err := authworker.NewHandler(authworker.Dependencies{
+			DB:           db,
+			Redis:        redis,
+			Mail:         cfg.Mail,
+			JWTSecretKey: cfg.Auth.JWTSecretKey,
 		})
 		if err != nil {
-			return register.Registry{}, err
+			return register.Registry{}, fmt.Errorf("build auth mail worker: %w", err)
 		}
-		handlers.Auth = authHandler
+		modules = append(modules, handler)
 	}
-	return register.New(handlers), nil
+	return register.New(modules...)
 }

@@ -17,11 +17,7 @@ var StartWorkerCmd = &cobra.Command{
 	Short: "Start background workers and schedules (requires Redis)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return withRuntime(cmd, requirements{redis: true, tracing: true, worker: true}, func(r *runtime) error {
-			registry, err := appworker.New(appworker.Dependencies{
-				Config: r.config,
-				DB:     r.db,
-				Redis:  r.redis,
-			})
+			registry, err := appworker.New(r.config, r.db, r.redis)
 			if err != nil {
 				return err
 			}

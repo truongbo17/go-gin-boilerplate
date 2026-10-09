@@ -1,9 +1,9 @@
 package register
 
 import (
+	"fmt"
+
 	"github.com/hibiken/asynq"
-	coreworker "github.com/truongbo17/go-gin-boilerplate/internal/app/core/worker"
-	authworker "github.com/truongbo17/go-gin-boilerplate/internal/app/worker/auth"
 	"github.com/truongbo17/go-gin-boilerplate/internal/infra/schedule"
 )
 
@@ -13,19 +13,27 @@ type Registry struct {
 	Schedules []schedule.Job
 }
 
-type Handlers struct {
-	Auth *authworker.Handler
+// Module exposes the task handlers owned by one worker feature.
+type Module interface {
+	Handlers() map[string]asynq.HandlerFunc
 }
 
-// New registers the handlers and schedules supplied for one worker process.
-func New(handlers Handlers) Registry {
+// New combines enabled worker modules and rejects duplicate task types.
+func New(modules ...Module) (Registry, error) {
 	registry := Registry{
 		Handlers:  make(map[string]asynq.HandlerFunc),
 		Schedules: exampleSchedules(),
 	}
-	if handlers.Auth != nil {
-		registry.Handlers[string(coreworker.TypeWelcomeEmail)] = handlers.Auth.Welcome
-		registry.Handlers[string(coreworker.TypePasswordResetEmail)] = handlers.Auth.PasswordReset
+	for _, module := range modules {
+		for taskType, handler := range module.Handlers() {
+			if taskType == "" || handler == nil {
+				return Registry{}, fmt.Errorf("invalid worker handler for task type %q", taskType)
+			}
+			if _, exists := registry.Handlers[taskType]; exists {
+				return Registry{}, fmt.Errorf("duplicate worker task type %q", taskType)
+			}
+			registry.Handlers[taskType] = handler
+		}
 	}
-	return registry
+	return registry, nil
 }
