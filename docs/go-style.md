@@ -7,7 +7,7 @@ These conventions describe the code in this repository. Use the Go version decla
 - Keep package names short, lower case, and meaningful at the import site. Name identifiers `ID`, `URL`, and `HTTP` in new code.
 - Keep use-case decisions in `internal/app/core/<feature>`. Core services do not import Gin, HTTP response packages, application config, or infrastructure connection packages. The current auth models intentionally retain GORM metadata; see [Architecture](architecture.md).
 - Put feature persistence in `internal/repository/<feature>`, shared clients in `internal/infra`, route middleware in `internal/middlewares`, task adapters in `internal/app/worker/<feature>`, and per-process registration in `internal/app/worker/register`.
-- Put feature REST routes, controllers, requests, responses, and module wiring under `internal/app/v1/<feature>`. Keep the top-level router in `internal/routes`; keep GraphQL schemas and resolvers in `internal/app/graphql/<feature>`.
+- Put feature REST routes, controllers, requests, responses, and module wiring under `internal/app/v1/<feature>`. Keep the top-level router in `internal/routes`; put GraphQL HTTP routes in `internal/app/v1/graphql`, schemas and resolvers in `internal/app/graphql/<feature>`, and feature-neutral metadata rules in `internal/app/core/graphql`.
 - Do not add a package-wide DB, Redis client, service locator, or mutable job registry. Construct dependencies once, pass required resources into a feature module, and reuse the resulting object.
 - Define an interface near the service that consumes it when it clarifies a boundary. Prefer a concrete type for a single implementation with no such need.
 

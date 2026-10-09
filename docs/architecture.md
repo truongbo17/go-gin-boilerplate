@@ -10,7 +10,8 @@ The application builds dependencies once at startup. HTTP requests reuse service
 | `config` | Environment variables and startup validation |
 | `internal/routes` | Gin engine, shared middleware, public routes, GraphQL mount, OpenAPI |
 | `internal/app/v1/<feature>` | HTTP feature module, REST routes, controllers, requests, responses |
-| `internal/app/graphql/<feature>` | GraphQL schema, generated code, resolvers |
+| `internal/app/graphql/<feature>` | GraphQL schema, generated code, resolvers, query limits |
+| `internal/app/core/graphql`, `internal/repository/graphql` | Enum catalog, entity option policy, allowlisted metadata queries |
 | `internal/app/core/<feature>` | Use cases, feature data, errors, interfaces consumed by services |
 | `internal/repository/<feature>` | Queries and transactions for that feature |
 | `internal/infra` | Reusable database, cache, messaging, storage, logging, tracing, worker adapters |
@@ -30,7 +31,7 @@ cmd/server.go
   -> internal/routes.New builds the Gin engine
        -> internal/app/v1/auth.NewModule creates repositories, services, controllers
        -> auth.RegisterRoutes registers REST middleware and handlers
-       -> internal/routes/graphql.go mounts the GraphQL handler
+       -> internal/app/v1/graphql mounts GraphQL and metadata routes
 
 HTTP request
   -> shared middleware -> route rate limit -> JWT/permission -> validator
@@ -45,7 +46,7 @@ The bundled auth models reuse `internal/model`, including GORM tags and `gorm.De
 
 ## Transport ownership
 
-REST route definitions for auth live in `internal/app/v1/auth/routes.go`, beside the module and controllers. Each route shows its rate limit, authentication, permission check, validator, and handler in execution order. `internal/routes` owns shared Gin setup, public endpoints, Swagger/OpenAPI, and the GraphQL mount. GraphQL resolvers and generated schema remain under `internal/app/graphql/auth`; the router adds JWT middleware.
+REST route definitions for auth live in `internal/app/v1/auth/routes.go`, beside the module and controllers. Each route shows its rate limit, authentication, permission check, validator, and handler in execution order. `internal/routes` owns shared Gin setup, public endpoints, and Swagger/OpenAPI. The GraphQL HTTP module under `internal/app/v1/graphql` owns its routes; resolvers and generated schema remain under `internal/app/graphql/auth`.
 
 HTTP request types and validation belong in the feature's `requests` package. Reusable Gin binding and path parsing belong in `internal/request`. Core input types describe use cases and contain no HTTP response behavior. Repositories return feature data; `internal/response` builds HTTP pagination links from `internal/page` results.
 
@@ -63,7 +64,7 @@ For an existing feature, define transport-independent input/output and rules in 
 
 ### GraphQL
 
-Edit `internal/app/graphql/auth/schema.graphqls`, implement its resolver beside the schema, and regenerate with `go run github.com/99designs/gqlgen generate --config gqlgen.yml`. Resolvers adapt input and output; business rules stay in core services. `internal/routes/graphql.go` mounts the authenticated endpoint. Introspection is disabled in release mode.
+Edit `internal/app/graphql/auth/schema.graphqls`, implement its resolver beside the schema, and regenerate with `go run github.com/99designs/gqlgen generate --config gqlgen.yml`. Resolvers adapt input and output; `internal/app/core/graphql` owns the enum catalog and entity access policy, while `internal/repository/graphql` owns allowlisted database queries. `internal/app/v1/graphql` registers the public enum endpoint, authenticated GraphQL endpoint, and authenticated REST entity-options endpoint. Entity keys `users`, `roles`, and `permissions` require their matching RBAC read permissions. GraphQL uses a 64 KiB body cap, 2-second request timeout, parser token/depth/alias/fragment/complexity limits, and disables introspection in release mode. Add only entity keys and enum groups owned by this application; the ERP export is a design reference, not a source of domain data.
 
 ### Worker task and schedule
 

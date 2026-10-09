@@ -78,6 +78,8 @@ air -c .air.toml
 - `POST /api/v1/auth/change-pass` — change password
 - `/api/v1/rbac/*` — users, roles and permissions
 - `POST /api/v1/graphql` — authenticated GraphQL query endpoint
+- `GET /api/v1/public/enum-options/:key` — public enum catalog lookup
+- `GET /api/v1/graphql/entity-options` — authenticated, permission-scoped entity options
 - `GET /swagger/index.html` — Swagger UI for the REST API
 - `GET /openapi.yaml` — OpenAPI 3.0 specification
 
@@ -132,7 +134,9 @@ curl -X POST http://localhost:8000/api/v1/graphql \
   -d '{"query":"{ me { id username email status } }"}'
 ```
 
-The [GraphQL schema](internal/app/graphql/auth/schema.graphqls) currently exposes the authenticated `me` query as a working extension point. GraphQL is under `internal/app/graphql/auth` because it is an API transport, while shared connections remain under `internal/infra`. POST requests require JWT, have a dedicated rate limit of 100 requests per minute per client IP, and inherit the 1 MiB request body limit. Query complexity and parser token counts are bounded; introspection is available outside release mode. To regenerate schema code after editing the schema, run `go run github.com/99designs/gqlgen generate --config gqlgen.yml` from the repository root.
+The [GraphQL schema](internal/app/graphql/auth/schema.graphqls) exposes `me`, `enum_keys`, `enum_options`, and `entity_options`. The public REST enum catalog currently contains `user_status`. Entity keys `users`, `roles`, and `permissions` require the existing `user:index`, `role:index`, and `permission:index` permissions respectively, both through GraphQL and the REST entity-options endpoint. GraphQL HTTP routes live in `internal/app/v1/graphql`; the in-memory catalog and access rules live in `internal/app/core/graphql`, and GORM queries live in `internal/repository/graphql`. The POST route requires JWT, permits 100 requests per minute per client IP, caps the body at 64 KiB, and gives execution a 2-second timeout. Query complexity, depth, alias count, fragment count, and parser token count are bounded; introspection is available outside release mode. To regenerate schema code, run `go run github.com/99designs/gqlgen generate --config gqlgen.yml` from the repository root.
+
+For dropdowns, call `GET /api/v1/public/enum-options/user_status` or query `entity_options(key: "roles", page: 1, per_page: 20) { key options { id code name label extra } meta { page per_page last_page total } }`. Both entity endpoints use the same permission checks and pagination logic. The ERP Vue client in the reference export is not part of this Go repository.
 
 ## Development
 
