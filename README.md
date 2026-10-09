@@ -50,7 +50,7 @@ The app runs on your host, so keep `DB_HOST=127.0.0.1` and `DB_PORT=3306` in `.e
 
 ### Live reload with Air
 
-The project targets Go 1.26.8. Install Air and put the Go binary directory on your `PATH`:
+The project targets the Go version declared in `go.mod`. Install Air and put the Go binary directory on your `PATH`:
 
 ```sh
 go install github.com/air-verse/air@v1.67.4
@@ -68,7 +68,6 @@ air -c .air.toml
 ## API
 
 - `GET /ping` — health response
-- `GET /ready` — dependency readiness (MySQL and Redis when enabled)
 - `POST /api/v1/auth/login` — access token
 - `POST /api/v1/auth/register` — create a user; queue a welcome email if mail is enabled
 - `POST /api/v1/auth/forgot-password` — request a reset email without disclosing account existence
@@ -80,8 +79,8 @@ air -c .air.toml
 - `POST /api/v1/graphql` — authenticated GraphQL query endpoint
 - `GET /api/v1/public/enum-options/:key` — public enum catalog lookup
 - `GET /api/v1/graphql/entity-options` — authenticated, permission-scoped entity options
-- `GET /swagger/index.html` — Swagger UI for the REST API
-- `GET /openapi.yaml` — OpenAPI 3.0 specification
+- `GET /swagger/index.html` — Swagger UI for the REST API (disabled in `release`)
+- `GET /openapi.yaml` — OpenAPI 3.0 specification (disabled in `release`)
 
 Pass `Authorization: Bearer <token>` to protected endpoints. Create roles and permissions according to your application. The base contains no privileged usernames. The `--admin` option grants an explicit admin role during trusted local setup; omit it for normal users.
 
@@ -123,7 +122,7 @@ For production SMTP, configure `MAIL_TLS_MODE=starttls` or `implicit`, use a rea
 
 ### Swagger and GraphQL
 
-Open `http://localhost:8000/swagger/index.html` to explore the REST API. The UI reads the bundled [OpenAPI specification](internal/routes/openapi.yaml). Use its **Authorize** button to send a JWT to protected routes. Registration, forgot-password, and reset-password are public operations with request and response examples; set `X-Language: en` in Swagger UI to match the English response examples. To see emails after using **Try it out**, start Redis, Mailpit, and the worker as described above. Keep the specification aligned with registered REST routes.
+In `local` or `debug` mode, open `http://localhost:8000/swagger/index.html` to explore the REST API. The UI reads the bundled [OpenAPI specification](internal/routes/openapi.yaml). Both documentation routes are unavailable in `release`. Use its **Authorize** button to send a JWT to protected routes. Registration, forgot-password, and reset-password are public operations with request and response examples; set `X-Language: en` in Swagger UI to match the English response examples. To see emails after using **Try it out**, start Redis, Mailpit, and the worker as described above. Keep the specification aligned with registered REST routes.
 
 GraphQL uses the same access token as REST. For example:
 
@@ -149,6 +148,8 @@ go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
 
 `config/` maps environment variables. `internal/app/core/auth/` owns reusable auth logic, including the mail use cases; `internal/app/core/worker/` defines task types, parameters, and dispatch. `internal/app/v1/auth/` assembles the HTTP auth module and owns its routes, handlers, and contracts. `internal/app/worker/auth/` handles background auth tasks, while `internal/app/worker/register/` registers handlers and schedules. `internal/request/` and `internal/response/` hold shared HTTP helpers; `internal/utils/` holds transport-independent parsing helpers. `internal/repository/auth/` implements auth persistence with GORM; `internal/infra/` provides resource clients and adapters. `internal/migrations/` contains auth schema migrations. The Go module path is `github.com/truongbo17/go-gin-boilerplate`.
 
+To add an HTTP feature, create its `NewModule` and `RegisterRoutes` methods under `internal/app/v1/<feature>`, then construct and mount it in `internal/routes/main.go`. Keep repositories, services, controllers, and route middleware inside the feature. See [Architecture and extension points](docs/architecture.md#extend-the-application) for worker setup too.
+
 See [Architecture and extension points](docs/architecture.md) for package boundaries, feature workflows, optional infrastructure, and the local performance reference. See [Go conventions](docs/go-style.md) for naming, context, error, and review guidelines.
 
 ### Infrastructure included
@@ -161,13 +162,12 @@ See [Architecture and extension points](docs/architecture.md) for package bounda
 | `internal/infra/objectstore` | Optional S3 or compatible object storage client |
 | `internal/infra/cache`, `redis` | Local or shared cache and Redis connection |
 | `internal/middlewares/limiter` | Per-route request limits backed by memory or Redis |
-| `internal/health` | Readiness check for configured dependencies |
 | `internal/infra/http` | Outbound HTTP client with timeout, tracing, and an 8 MiB response limit |
 | `internal/infra/worker`, `schedule` | Optional Redis-backed jobs and schedules |
 | `internal/infra/mail` | SMTP sender for optional auth email jobs |
 | `internal/infra/logger`, `tracer` | Logging and telemetry |
 
-Add feature-specific persistence under `internal/repository/<feature>/` and external-system integrations under `internal/infra/`; keep shared HTTP helpers under `internal/request/` and `internal/response/`, common language messages under `internal/i18n/`, and business rules in `internal/app/core/`. Feature error messages and their HTTP status mapping live with that feature's responses. `/ping` checks the HTTP process, while `/ready` returns 503 if MySQL or configured Redis is unavailable.
+Add feature-specific persistence under `internal/repository/<feature>/` and external-system integrations under `internal/infra/`; keep shared HTTP helpers under `internal/request/` and `internal/response/`, common language messages under `internal/i18n/`, and business rules in `internal/app/core/`. Feature error messages and their HTTP status mapping live with that feature's responses. `/ping` checks the HTTP process.
 
 See [Optional infrastructure clients](docs/architecture.md#optional-infrastructure) for constructors and shutdown. These clients are available for features that need them; the default server does not connect to all backends. The bundled auth schema migrations are MySQL-specific, so PostgreSQL support here is an independent connection client rather than a drop-in auth database switch.
 
@@ -182,7 +182,7 @@ The Docker Compose file under `deployments/` starts MySQL and Redis for developm
 - Supply a unique JWT secret with at least 32 characters; no secret is bundled.
 - Set exact CORS origins for your clients. The example allows `http://localhost:3000`.
 - Use Redis-backed cache for token revocation and rate limits across replicas.
-- Login is limited to 10 attempts per minute per client IP; each other auth or RBAC endpoint has its own 300 requests per minute per IP limit, declared alongside that route in `internal/app/v1/auth/routes.go`. `/ping` and `/ready` are not rate limited so health probes cannot exhaust client quotas. A 429 response includes `Retry-After`; rate limit and request ID headers are exposed to allowed browser origins.
+- Login is limited to 10 attempts per minute per client IP; each other auth or RBAC endpoint has its own 300 requests per minute per IP limit, declared alongside that route in `internal/app/v1/auth/routes.go`. `/ping` is not rate limited so health probes cannot exhaust client quotas. A 429 response includes `Retry-After`; rate limit and request ID headers are exposed to allowed browser origins.
 - By default, forwarded IP headers are ignored. Behind a reverse proxy, set `APP_TRUSTED_PROXIES` to its exact IP or CIDR (comma-separated for multiple proxies), and restrict direct access to the app. Never set it to a public or unrestricted CIDR: the rate limiter uses the resulting client IP. Configure HTTPS and HSTS at the TLS-terminating proxy.
 - Request bodies are limited to 1 MiB, including streamed bodies. API failures use HTTP error status codes, and responses use `Cache-Control: no-store`.
 - Access tokens include a password version; changing a password invalidates tokens issued before the change. Tokens issued by older versions of this boilerplate need a fresh login after upgrading.
