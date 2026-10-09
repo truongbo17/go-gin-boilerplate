@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func JWTMiddleware() gin.HandlerFunc {
+func JWTMiddleware(auth services.AuthService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := c.GetHeader(config.HeaderAuth)
 		parts := strings.Fields(header)
@@ -19,7 +19,6 @@ func JWTMiddleware() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
-		auth := services.NewAuthService()
 		userID, claims, err := auth.VerifyTokenClaims(c.Request.Context(), parts[1], enums.TokenTypeAccess)
 		if err != nil {
 			_ = c.Error(err)
@@ -28,7 +27,7 @@ func JWTMiddleware() gin.HandlerFunc {
 		}
 		user, err := auth.GetUserById(c.Request.Context(), userID)
 		if err != nil || user == nil || user.Status != enums.StatusActive ||
-			subtle.ConstantTimeCompare([]byte(claims.PasswordVersion), []byte(services.PasswordVersionForUser(user))) != 1 {
+			subtle.ConstantTimeCompare([]byte(claims.PasswordVersion), []byte(auth.PasswordVersionForUser(user))) != 1 {
 			_ = c.Error(errors.New("user unavailable"))
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return

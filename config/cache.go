@@ -13,7 +13,3 @@ type Cache struct {
 	RedisUsername string `mapstructure:"REDIS_USERNAME"`
 	RedisPassword string `mapstructure:"REDIS_PASSWORD"`
 }
-
-const (
-	CacheKeyBlacklist string = "token:blacklist:%d_%s"
-)

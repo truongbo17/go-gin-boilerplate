@@ -1,0 +1,12 @@
+schema:
+  - internal/app/graphql/auth/schema.graphqls
+exec:
+  filename: internal/app/graphql/auth/generated/generated.go
+  package: generated
+model:
+  filename: internal/app/graphql/auth/model/models_gen.go
+  package: model
+resolver:
+  layout: follow-schema
+  dir: internal/app/graphql/auth
+  package: auth

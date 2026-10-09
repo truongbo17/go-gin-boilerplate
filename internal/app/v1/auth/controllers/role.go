@@ -1,13 +1,12 @@
 package controllers
 
 import (
-	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/models"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/services"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/types"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/v1/auth/requests"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/v1/auth/responses"
+	"github.com/truongbo17/go-gin-boilerplate/internal/request"
 	"github.com/truongbo17/go-gin-boilerplate/internal/response"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
@@ -20,11 +19,11 @@ type RoleController struct {
 	PermissionService services.PermissionService
 }
 
-func NewRoleController() *RoleController {
+func NewRoleController(roleService services.RoleService, permissionService services.PermissionService) *RoleController {
 	return &RoleController{
 		Tracer:            otel.Tracer("RoleController"),
-		RoleService:       services.NewRoleService(),
-		PermissionService: services.NewPermissionService(),
+		RoleService:       roleService,
+		PermissionService: permissionService,
 	}
 }
 
@@ -52,12 +51,12 @@ func (c *RoleController) ListRoles(ctx *gin.Context) {
 		PerPage: requestBody.PerPage,
 	})
 	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
+		responses.ReturnError(ctx, err)
 		return
 	}
 
 	var roleResponses []responses.RoleResponse
-	for _, role := range *roles.Data {
+	for _, role := range roles.Items {
 		roleResponses = append(roleResponses, responses.RoleResponse{
 			ID:          role.ID,
 			Name:        role.Name,
@@ -68,7 +67,7 @@ func (c *RoleController) ListRoles(ctx *gin.Context) {
 		})
 	}
 
-	response.ReturnSuccess(ctx, roleResponses, roles.MetaData)
+	response.ReturnSuccess(ctx, roleResponses, response.PageMeta(ctx, *roles))
 }
 
 // CreateRole godoc
@@ -95,7 +94,7 @@ func (c *RoleController) CreateRole(ctx *gin.Context) {
 		Description: requestBody.Description,
 	})
 	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
+		responses.ReturnError(ctx, err)
 		return
 	}
 
@@ -125,7 +124,7 @@ func (c *RoleController) UpdateRole(ctx *gin.Context) {
 	ctxHandler, span := c.Tracer.Start(ctx.Request.Context(), "UpdateRole")
 	defer span.End()
 
-	id, ok := parseID(ctx)
+	id, ok := request.PathID(ctx)
 	if !ok {
 		return
 	}
@@ -140,7 +139,7 @@ func (c *RoleController) UpdateRole(ctx *gin.Context) {
 		Description: requestBody.Description,
 	})
 	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
+		responses.ReturnError(ctx, err)
 		return
 	}
 
@@ -169,7 +168,7 @@ func (c *RoleController) DeleteRole(ctx *gin.Context) {
 	ctxHandler, span := c.Tracer.Start(ctx.Request.Context(), "DeleteRole")
 	defer span.End()
 
-	id, ok := parseID(ctx)
+	id, ok := request.PathID(ctx)
 	if !ok {
 		return
 	}
@@ -178,54 +177,11 @@ func (c *RoleController) DeleteRole(ctx *gin.Context) {
 		ID: id,
 	})
 	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
+		responses.ReturnError(ctx, err)
 		return
 	}
 
 	response.ReturnSuccess(ctx, nil, nil)
-}
-
-// GetUserRoles godoc
-// @Summary      Get user roles
-// @Description  Get all roles assigned to a user
-// @Tags         users
-// @Accept       json
-// @Produce      json
-// @Param        id   path      int  true  "User ID"
-// @Success      200  {object}  responses.UserRolesResponse
-// @Failure      400  {object}  response.BaseResponse
-// @Router       /api/v1/rbac/users/{id}/roles [get]
-// @Security     BearerAuth
-func (c *RoleController) GetUserRoles(ctx *gin.Context) {
-	ctxHandler, span := c.Tracer.Start(ctx.Request.Context(), "GetUserRoles")
-	defer span.End()
-
-	id, ok := parseID(ctx)
-	if !ok {
-		return
-	}
-
-	roles, err := c.PermissionService.GetUserRoles(ctxHandler, id)
-	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
-		return
-	}
-
-	var roleResponses []responses.RoleResponse
-	for _, role := range roles {
-		roleResponses = append(roleResponses, responses.RoleResponse{
-			ID:          role.ID,
-			Name:        role.Name,
-			Slug:        role.Slug,
-			Description: role.Description,
-			CreatedAt:   role.CreatedAt,
-			UpdatedAt:   role.UpdatedAt,
-		})
-	}
-
-	response.ReturnSuccess(ctx, responses.UserRolesResponse{
-		Roles: roleResponses,
-	}, nil)
 }
 
 // GetRolePermissions godoc
@@ -243,14 +199,14 @@ func (c *RoleController) GetRolePermissions(ctx *gin.Context) {
 	ctxHandler, span := c.Tracer.Start(ctx.Request.Context(), "GetRolePermissions")
 	defer span.End()
 
-	id, ok := parseID(ctx)
+	id, ok := request.PathID(ctx)
 	if !ok {
 		return
 	}
 
 	permissions, err := c.PermissionService.GetRolePermissions(ctxHandler, id)
 	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
+		responses.ReturnError(ctx, err)
 		return
 	}
 
@@ -287,7 +243,7 @@ func (c *RoleController) AssignPermissionToRole(ctx *gin.Context) {
 	ctxHandler, span := c.Tracer.Start(ctx.Request.Context(), "AssignPermissionToRole")
 	defer span.End()
 
-	id, ok := parseID(ctx)
+	id, ok := request.PathID(ctx)
 	if !ok {
 		return
 	}
@@ -300,44 +256,7 @@ func (c *RoleController) AssignPermissionToRole(ctx *gin.Context) {
 		PermissionIDs: requestBody.PermissionIDs,
 	})
 	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
-		return
-	}
-
-	response.ReturnSuccess(ctx, nil, nil)
-}
-
-// AssignRoleToUser godoc
-// @Summary      Assign roles to user
-// @Description  Assign roles to a user
-// @Tags         users
-// @Accept       json
-// @Produce      json
-// @Param        id   path      int  true  "User ID"
-// @Param        req  body      requests.AssignRoleToUserRequest  true  "Assign Role Request"
-// @Success      200  {object}  response.BaseResponse
-// @Failure      400  {object}  response.BaseResponse
-// @Router       /api/v1/rbac/users/{id}/roles [post]
-// @Security     BearerAuth
-func (c *RoleController) AssignRoleToUser(ctx *gin.Context) {
-	ctxHandler, span := c.Tracer.Start(ctx.Request.Context(), "AssignRoleToUser")
-	defer span.End()
-
-	id, ok := parseID(ctx)
-	if !ok {
-		return
-	}
-
-	var assignRequest, _ = ctx.Get("AssignRoleToUserRequest")
-	requestBody, _ := assignRequest.(requests.AssignRoleToUserRequest)
-
-	err := c.PermissionService.AssignRoleToUser(ctxHandler, types.AssignRoleToUserInput{
-		UserID:  id,
-		ActorID: ctx.MustGet("user").(*models.User).ID,
-		RoleIDs: requestBody.RoleIDs,
-	})
-	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
+		responses.ReturnError(ctx, err)
 		return
 	}
 

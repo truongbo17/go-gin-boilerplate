@@ -3,11 +3,8 @@ package repository
 import (
 	"context"
 	"errors"
-	"github.com/truongbo17/go-gin-boilerplate/config"
-	"github.com/truongbo17/go-gin-boilerplate/internal/response"
-	"math"
-	"net/url"
-	"strconv"
+
+	"github.com/truongbo17/go-gin-boilerplate/internal/page"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -16,9 +13,8 @@ import (
 type PaginateParams struct {
 	Page         int
 	PerPage      int
-	Conditions   map[string]interface{}
+	Conditions   map[string]any
 	ExtraWheres  []WhereClause
-	Path         string
 	SelectFields []string
 	OrderBy      string
 	Preloads     []PreloadClause
@@ -28,22 +24,22 @@ type PaginateParams struct {
 
 type WhereClause struct {
 	Query string
-	Args  []interface{}
+	Args  []any
 }
 
 type JoinClause struct {
 	Query string
-	Args  []interface{}
+	Args  []any
 }
 
 type PreloadClause struct {
 	Query string
-	Args  []interface{}
+	Args  []any
 }
 
 func NewPaginateParam() *PaginateParams {
 	return &PaginateParams{
-		Conditions: make(map[string]interface{}),
+		Conditions: make(map[string]any),
 		Page:       1,
 		PerPage:    20,
 		OrderBy:    "created_at DESC",
@@ -108,7 +104,7 @@ func (r *BaseRepository[T]) Save(ctx context.Context, entity *T) error {
 	return r.DB.WithContext(ctx).Save(entity).Error
 }
 
-func (r *BaseRepository[T]) Update(ctx context.Context, entity *T, update interface{}) error {
+func (r *BaseRepository[T]) Update(ctx context.Context, entity *T, update any) error {
 	return r.DB.WithContext(ctx).Model(entity).Updates(update).Error
 }
 
@@ -117,11 +113,11 @@ func (r *BaseRepository[T]) Delete(ctx context.Context, id uint) error {
 	return r.DB.WithContext(ctx).Delete(&entity, id).Error
 }
 
-func (r *BaseRepository[T]) List(ctx context.Context, entities *[]T, conditions map[string]interface{}) error {
+func (r *BaseRepository[T]) List(ctx context.Context, entities *[]T, conditions map[string]any) error {
 	return r.DB.WithContext(ctx).Where(conditions).Find(entities).Error
 }
 
-func (r *BaseRepository[T]) FindByCondition(ctx context.Context, condition interface{}, args ...interface{}) ([]T, error) {
+func (r *BaseRepository[T]) FindByCondition(ctx context.Context, condition any, args ...any) ([]T, error) {
 	var entities []T
 	err := r.DB.WithContext(ctx).Where(condition, args...).Find(&entities).Error
 	if err != nil {
@@ -130,7 +126,7 @@ func (r *BaseRepository[T]) FindByCondition(ctx context.Context, condition inter
 	return entities, nil
 }
 
-func (r *BaseRepository[T]) FindByConditionForUpdate(ctx context.Context, condition interface{}, args ...interface{}) ([]T, error) {
+func (r *BaseRepository[T]) FindByConditionForUpdate(ctx context.Context, condition any, args ...any) ([]T, error) {
 	var entities []T
 	err := r.DB.WithContext(ctx).Clauses(clause.Locking{Strength: "UPDATE"}).Where(condition, args...).Find(&entities).Error
 	if err != nil {
@@ -139,7 +135,7 @@ func (r *BaseRepository[T]) FindByConditionForUpdate(ctx context.Context, condit
 	return entities, nil
 }
 
-func (r *BaseRepository[T]) FindByConditionAndOrder(ctx context.Context, orderBy string, condition interface{}, args ...interface{}) ([]T, error) {
+func (r *BaseRepository[T]) FindByConditionAndOrder(ctx context.Context, orderBy string, condition any, args ...any) ([]T, error) {
 	var entities []T
 	query := r.DB.WithContext(ctx).Where(condition, args...)
 
@@ -154,7 +150,7 @@ func (r *BaseRepository[T]) FindByConditionAndOrder(ctx context.Context, orderBy
 	return entities, nil
 }
 
-func (r *BaseRepository[T]) FirstByConditionAndOrder(ctx context.Context, orderBy string, condition interface{}, args ...interface{}) (*T, error) {
+func (r *BaseRepository[T]) FirstByConditionAndOrder(ctx context.Context, orderBy string, condition any, args ...any) (*T, error) {
 	var entities T
 	query := r.DB.WithContext(ctx).Where(condition, args...)
 
@@ -169,7 +165,7 @@ func (r *BaseRepository[T]) FirstByConditionAndOrder(ctx context.Context, orderB
 	return &entities, nil
 }
 
-func (r *BaseRepository[T]) FindOneByCondition(ctx context.Context, condition interface{}, args ...interface{}) (*T, error) {
+func (r *BaseRepository[T]) FindOneByCondition(ctx context.Context, condition any, args ...any) (*T, error) {
 	var entity T
 	err := r.DB.WithContext(ctx).Where(condition, args...).First(&entity).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -178,7 +174,7 @@ func (r *BaseRepository[T]) FindOneByCondition(ctx context.Context, condition in
 	return &entity, err
 }
 
-func (r *BaseRepository[T]) FindOneByConditionAndOrder(ctx context.Context, condition interface{}, order interface{}, args ...interface{}) (*T, error) {
+func (r *BaseRepository[T]) FindOneByConditionAndOrder(ctx context.Context, condition any, order any, args ...any) (*T, error) {
 	var entity T
 	err := r.DB.WithContext(ctx).Where(condition, args...).Order(order).First(&entity).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -187,7 +183,7 @@ func (r *BaseRepository[T]) FindOneByConditionAndOrder(ctx context.Context, cond
 	return &entity, err
 }
 
-func (r *BaseRepository[T]) FindOneByConditionWithSelect(ctx context.Context, condition, sec interface{}, args ...interface{}) (*T, error) {
+func (r *BaseRepository[T]) FindOneByConditionWithSelect(ctx context.Context, condition, sec any, args ...any) (*T, error) {
 	var entity T
 	err := r.DB.WithContext(ctx).Where(condition, args...).Select(sec).First(&entity).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -196,7 +192,7 @@ func (r *BaseRepository[T]) FindOneByConditionWithSelect(ctx context.Context, co
 	return &entity, err
 }
 
-func (r *BaseRepository[T]) DeleteByCondition(ctx context.Context, condition interface{}, args ...interface{}) error {
+func (r *BaseRepository[T]) DeleteByCondition(ctx context.Context, condition any, args ...any) error {
 	var entity T
 	result := r.DB.WithContext(ctx).Where(condition, args...).Delete(&entity)
 	if result.Error != nil {
@@ -205,7 +201,7 @@ func (r *BaseRepository[T]) DeleteByCondition(ctx context.Context, condition int
 	return nil
 }
 
-func (r *BaseRepository[T]) UpdateByCondition(ctx context.Context, condition interface{}, updates interface{}, args ...interface{}) error {
+func (r *BaseRepository[T]) UpdateByCondition(ctx context.Context, condition any, updates any, args ...any) error {
 	var entity *T
 
 	result := r.DB.WithContext(ctx).Model(&entity).Where(condition, args...).Updates(updates)
@@ -216,7 +212,7 @@ func (r *BaseRepository[T]) UpdateByCondition(ctx context.Context, condition int
 	return nil
 }
 
-func (r *BaseRepository[T]) Paginate(ctx context.Context, params *PaginateParams) (*response.PaginateResponse[T], error) {
+func (r *BaseRepository[T]) Paginate(ctx context.Context, params *PaginateParams) (*page.Result[T], error) {
 	if params.Page <= 0 {
 		params.Page = 1
 	}
@@ -229,8 +225,6 @@ func (r *BaseRepository[T]) Paginate(ctx context.Context, params *PaginateParams
 	if params.Page > 10000 {
 		return nil, errors.New("page exceeds supported range")
 	}
-
-	path := config.EnvConfig.App.Url + params.Path
 
 	var entities []T
 	var total int64
@@ -277,47 +271,5 @@ func (r *BaseRepository[T]) Paginate(ctx context.Context, params *PaginateParams
 		return nil, err
 	}
 
-	lastPage := int(math.Ceil(float64(total) / float64(params.PerPage)))
-
-	res := &response.PaginateResponse[T]{
-		Data: &entities,
-		MetaData: response.MetaData{
-			CurrentPage:  params.Page,
-			FirstPageUrl: buildPageUrl(path, 1),
-			LastPage:     lastPage,
-			LastPageUrl:  buildPageUrl(path, lastPage),
-			NextPageUrl:  buildPageUrl(path, params.Page+1),
-			PrevPageUrl:  buildPageUrl(path, params.Page-1),
-			Path:         path,
-			PerPage:      params.PerPage,
-			Total:        int(total),
-			From:         offset + 1,
-			To:           offset + len(entities),
-		},
-	}
-
-	if params.Page >= lastPage {
-		res.NextPageUrl = ""
-	}
-	if params.Page <= 1 {
-		res.PrevPageUrl = ""
-	}
-
-	return res, nil
-}
-
-func buildPageUrl(base string, page int) string {
-	if page < 1 {
-		return ""
-	}
-	parsedUrl, err := url.Parse(base)
-	if err != nil {
-		return ""
-	}
-
-	query := parsedUrl.Query()
-	query.Set("page", strconv.Itoa(page))
-	parsedUrl.RawQuery = query.Encode()
-
-	return parsedUrl.String()
+	return &page.Result[T]{Items: entities, Number: params.Page, Size: params.PerPage, Total: total}, nil
 }

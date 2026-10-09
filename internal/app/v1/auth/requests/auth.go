@@ -5,7 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/truongbo17/go-gin-boilerplate/config"
-	"github.com/truongbo17/go-gin-boilerplate/internal/infra/i18n"
+	"github.com/truongbo17/go-gin-boilerplate/internal/i18n"
+	"github.com/truongbo17/go-gin-boilerplate/internal/request"
 	"net/http"
 	"regexp"
 )
@@ -29,7 +30,7 @@ func LoginValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 
 		var loginRequest LoginRequest
-		if !bindRequest(context, &loginRequest) {
+		if !request.Bind(context, &loginRequest) {
 			return
 		}
 
@@ -65,7 +66,7 @@ func (a ChangePasswordRequest) Validate(lang string) error {
 		),
 		validation.Field(&a.ConfirmPassword,
 			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
-			validation.By(func(value interface{}) error {
+			validation.By(func(value any) error {
 				if value.(string) != a.NewPassword {
 					return errors.New(i18n.GetMessage(lang, "validation.password_mismatch", nil))
 				}
@@ -78,7 +79,7 @@ func (a ChangePasswordRequest) Validate(lang string) error {
 func ChangePasswordValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var changePasswordRequest ChangePasswordRequest
-		if !bindRequest(context, &changePasswordRequest) {
+		if !request.Bind(context, &changePasswordRequest) {
 			return
 		}
 

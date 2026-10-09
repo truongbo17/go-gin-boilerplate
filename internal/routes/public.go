@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/truongbo17/go-gin-boilerplate/config"
-	"github.com/truongbo17/go-gin-boilerplate/internal/infra/health"
+	"github.com/truongbo17/go-gin-boilerplate/internal/health"
 	"github.com/truongbo17/go-gin-boilerplate/internal/response"
 	"net/http"
 	"time"
@@ -18,11 +18,11 @@ import (
 // @Produce plain
 // @Success 200 {string} string "pong: <x-request-id>"
 // @Router /ping [get]
-func LoadPublic(r *gin.Engine) *gin.RouterGroup {
+func LoadPublic(r *gin.Engine, readiness health.Checker) *gin.RouterGroup {
 	r.GET("/ready", func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
 		defer cancel()
-		if err := health.Ready(ctx); err != nil {
+		if err := readiness.Ready(ctx); err != nil {
 			c.AbortWithStatus(http.StatusServiceUnavailable)
 			return
 		}

@@ -29,9 +29,3 @@ type AssignPermissionToRoleInput struct {
 	RoleID        uint   `json:"role_id"`
 	PermissionIDs []uint `json:"permission_ids"`
 }
-
-type AssignRoleToUserInput struct {
-	UserID  uint   `json:"user_id"`
-	ActorID uint   `json:"actor_id"`
-	RoleIDs []uint `json:"role_ids"`
-}

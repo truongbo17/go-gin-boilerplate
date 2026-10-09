@@ -2,40 +2,52 @@ package services
 
 import (
 	"context"
+
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core"
+	authcore "github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth"
+	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/enums"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/models"
-	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/repositories"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/types"
-	baseModel "github.com/truongbo17/go-gin-boilerplate/internal/model"
-	"github.com/truongbo17/go-gin-boilerplate/internal/repository"
-	"github.com/truongbo17/go-gin-boilerplate/internal/response"
+	"github.com/truongbo17/go-gin-boilerplate/internal/page"
 )
 
 type UserService struct {
-	UserRepository repositories.UserRepository
+	UserRepository UserServiceRepository
 }
 
-func NewUserService() UserService {
-	return UserService{UserRepository: repositories.NewUserRepository()}
+type UserServiceRepository interface {
+	CreateWithAdminRole(context.Context, *models.User, bool) error
+	ListPage(context.Context, page.Query) (*page.Result[models.User], error)
+	FindByID(context.Context, uint) (*models.User, error)
+	Save(context.Context, *models.User) error
+	GetUserRoles(context.Context, uint) ([]models.Role, error)
+	AssignRoleToUser(context.Context, uint, uint, []uint) error
 }
 
-func (us *UserService) ListUsers(ctx context.Context, input types.ListUsersInput) (*response.PaginateResponse[models.User], *core.ErrorReturn) {
-	params := repository.NewPaginateParam()
-	params.Page = input.Page
-	params.PerPage = input.PerPage
-	params.Path = "/api/v1/rbac/users"
+func NewUserService(userRepository UserServiceRepository) UserService {
+	return UserService{UserRepository: userRepository}
+}
 
-	if input.Search != "" {
-		params.ExtraWheres = append(params.ExtraWheres, repository.WhereClause{
-			Query: "username LIKE ? OR email LIKE ?",
-			Args:  []interface{}{"%" + input.Search + "%", "%" + input.Search + "%"},
-		})
+func (us *UserService) CreateUser(ctx context.Context, input types.ProvisionUserInput) error {
+	password, err := generatePassword(input.Password)
+	if err != nil {
+		return err
 	}
 
-	users, err := us.UserRepository.Paginate(ctx, params)
+	user := &models.User{
+		Username: input.Username,
+		Email:    input.Email,
+		Password: string(password),
+		Status:   enums.StatusActive,
+	}
+	return us.UserRepository.CreateWithAdminRole(ctx, user, input.Admin)
+}
+
+func (us *UserService) ListUsers(ctx context.Context, input types.ListUsersInput) (*page.Result[models.User], *core.ErrorReturn) {
+	users, err := us.UserRepository.ListPage(ctx, page.Query{Number: input.Page, Size: input.PerPage, Search: input.Search})
 	if err != nil {
 		return nil, &core.ErrorReturn{
-			ErrorCode: response.ErrUserListInternalError,
+			ErrorCode: authcore.ErrUserListInternalError,
 			Err:       err,
 		}
 	}
@@ -44,34 +56,26 @@ func (us *UserService) ListUsers(ctx context.Context, input types.ListUsersInput
 }
 
 func (s *UserService) UpdateUser(ctx context.Context, input types.UpdateUserInput) (*models.User, *core.ErrorReturn) {
-	user, err := s.UserRepository.FindOneByCondition(ctx, models.User{
-		BasicModel: baseModel.BasicModel{
-			BasicIDModel: baseModel.BasicIDModel{
-				ID: input.ID,
-			},
-		},
-	})
+	user, err := s.UserRepository.FindByID(ctx, input.ID)
 	if err != nil {
 		return nil, &core.ErrorReturn{
 			Err:       err,
-			ErrorCode: response.ErrFindUserFailed,
+			ErrorCode: authcore.ErrFindUserFailed,
 		}
 	}
 	if user == nil {
 		return nil, &core.ErrorReturn{
 			Err:       nil,
-			ErrorCode: response.ErrUserNotFound,
+			ErrorCode: authcore.ErrUserNotFound,
 		}
 	}
-	serviceAuth := NewAuthService()
-
 	pwd := user.Password
 	if input.Password != "" {
-		newPass, err := serviceAuth.GeneratePassword(input.Password)
+		newPass, err := generatePassword(input.Password)
 		if err != nil {
 			return nil, &core.ErrorReturn{
 				Err:       nil,
-				ErrorCode: response.ErrUpdateUserFailed,
+				ErrorCode: authcore.ErrUpdateUserFailed,
 			}
 		}
 		pwd = string(newPass)
@@ -83,9 +87,30 @@ func (s *UserService) UpdateUser(ctx context.Context, input types.UpdateUserInpu
 	if err = s.UserRepository.Save(ctx, user); err != nil {
 		return nil, &core.ErrorReturn{
 			Err:       err,
-			ErrorCode: response.ErrUpdateUserFailed,
+			ErrorCode: authcore.ErrUpdateUserFailed,
 		}
 	}
 
 	return user, nil
+}
+
+func (us *UserService) GetUserRoles(ctx context.Context, userID uint) ([]models.Role, *core.ErrorReturn) {
+	roles, err := us.UserRepository.GetUserRoles(ctx, userID)
+	if err != nil {
+		return nil, &core.ErrorReturn{
+			ErrorCode: authcore.ErrRoleInternalError,
+			Err:       err,
+		}
+	}
+	if roles == nil {
+		roles = []models.Role{}
+	}
+	return roles, nil
+}
+
+func (us *UserService) AssignRoleToUser(ctx context.Context, input types.AssignRoleToUserInput) *core.ErrorReturn {
+	if err := us.UserRepository.AssignRoleToUser(ctx, input.ActorID, input.UserID, input.RoleIDs); err != nil {
+		return &core.ErrorReturn{ErrorCode: authcore.ErrRoleAssignUser, Err: err}
+	}
+	return nil
 }

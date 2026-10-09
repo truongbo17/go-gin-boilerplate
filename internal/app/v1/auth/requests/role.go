@@ -2,7 +2,7 @@ package requests
 
 import (
 	"github.com/truongbo17/go-gin-boilerplate/config"
-	"github.com/truongbo17/go-gin-boilerplate/internal/infra/i18n"
+	"github.com/truongbo17/go-gin-boilerplate/internal/i18n"
 	"github.com/truongbo17/go-gin-boilerplate/internal/request"
 	"net/http"
 	"regexp"
@@ -37,7 +37,7 @@ func (a ListRoleRequest) Validate(lang string) error {
 func ListRoleValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var listRoleRequest ListRoleRequest
-		if !bindRequest(context, &listRoleRequest) {
+		if !request.Bind(context, &listRoleRequest) {
 			return
 		}
 
@@ -77,7 +77,7 @@ func (a CreateRoleRequest) Validate(lang string) error {
 func CreateRoleValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var createRoleRequest CreateRoleRequest
-		if !bindRequest(context, &createRoleRequest) {
+		if !request.Bind(context, &createRoleRequest) {
 			return
 		}
 
@@ -117,7 +117,7 @@ func (a UpdateRoleRequest) Validate(lang string) error {
 func UpdateRoleValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var updateRoleRequest UpdateRoleRequest
-		if !bindRequest(context, &updateRoleRequest) {
+		if !request.Bind(context, &updateRoleRequest) {
 			return
 		}
 
@@ -146,7 +146,7 @@ func (a AssignPermissionToRoleRequest) Validate(lang string) error {
 func AssignPermissionToRoleValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var assignPermissionToRoleRequest AssignPermissionToRoleRequest
-		if !bindRequest(context, &assignPermissionToRoleRequest) {
+		if !request.Bind(context, &assignPermissionToRoleRequest) {
 			return
 		}
 
@@ -156,35 +156,6 @@ func AssignPermissionToRoleValidator() gin.HandlerFunc {
 		}
 
 		context.Set("AssignPermissionToRoleRequest", assignPermissionToRoleRequest)
-		context.Next()
-	}
-}
-
-type AssignRoleToUserRequest struct {
-	RoleIDs []uint `json:"role_ids" form:"role_ids"`
-}
-
-func (a AssignRoleToUserRequest) Validate(lang string) error {
-	return validation.ValidateStruct(&a,
-		validation.Field(&a.RoleIDs,
-			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
-		),
-	)
-}
-
-func AssignRoleToUserValidator() gin.HandlerFunc {
-	return func(context *gin.Context) {
-		var assignRoleToUserRequest AssignRoleToUserRequest
-		if !bindRequest(context, &assignRoleToUserRequest) {
-			return
-		}
-
-		if err := assignRoleToUserRequest.Validate(context.GetString(config.HeaderLanguage)); err != nil {
-			_ = context.AbortWithError(http.StatusUnprocessableEntity, err)
-			return
-		}
-
-		context.Set("AssignRoleToUserRequest", assignRoleToUserRequest)
 		context.Next()
 	}
 }

@@ -12,10 +12,8 @@ import (
 	"time"
 )
 
-var Request *BaseRequest
-
-func InitBaseRequest() {
-	Request = &BaseRequest{
+func New() *BaseRequest {
+	return &BaseRequest{
 		Client: &http.Client{
 			Timeout:   20 * time.Second,
 			Transport: otelhttp.NewTransport(http.DefaultTransport),
@@ -31,7 +29,7 @@ const maxResponseBytes = 8 << 20
 
 var ErrResponseTooLarge = errors.New("HTTP response exceeds 8 MiB")
 
-func (r *BaseRequest) Do(ctx context.Context, method, urlStr string, headers map[string]string, body interface{}) (*http.Response, []byte, error) {
+func (r *BaseRequest) Do(ctx context.Context, method, urlStr string, headers map[string]string, body any) (*http.Response, []byte, error) {
 	var requestBody []byte
 	var err error
 	if body != nil {
@@ -87,14 +85,14 @@ func (r *BaseRequest) Get(ctx context.Context, baseURL string, headers map[strin
 	return r.Do(ctx, http.MethodGet, u.String(), headers, nil)
 }
 
-func (r *BaseRequest) Post(ctx context.Context, url string, headers map[string]string, body interface{}) (*http.Response, []byte, error) {
+func (r *BaseRequest) Post(ctx context.Context, url string, headers map[string]string, body any) (*http.Response, []byte, error) {
 	return r.Do(ctx, http.MethodPost, url, headers, body)
 }
 
-func (r *BaseRequest) Put(ctx context.Context, url string, headers map[string]string, body interface{}) (*http.Response, []byte, error) {
+func (r *BaseRequest) Put(ctx context.Context, url string, headers map[string]string, body any) (*http.Response, []byte, error) {
 	return r.Do(ctx, http.MethodPut, url, headers, body)
 }
 
-func (r *BaseRequest) Delete(ctx context.Context, url string, headers map[string]string, body interface{}) (*http.Response, []byte, error) {
+func (r *BaseRequest) Delete(ctx context.Context, url string, headers map[string]string, body any) (*http.Response, []byte, error) {
 	return r.Do(ctx, http.MethodDelete, url, headers, body)
 }

@@ -3,39 +3,34 @@ package services
 import (
 	"context"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core"
+	authcore "github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/models"
-	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/repositories"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/types"
-	"github.com/truongbo17/go-gin-boilerplate/internal/repository"
-	"github.com/truongbo17/go-gin-boilerplate/internal/response"
+	"github.com/truongbo17/go-gin-boilerplate/internal/page"
 	"strings"
 )
 
 type RoleService struct {
-	RoleRepository repositories.RoleRepository
+	RoleRepository RoleStore
 }
 
-func NewRoleService() RoleService {
-	return RoleService{RoleRepository: repositories.NewRoleRepository()}
+type RoleStore interface {
+	ListPage(context.Context, page.Query) (*page.Result[models.Role], error)
+	Create(context.Context, *models.Role) error
+	FindByID(context.Context, uint) (*models.Role, error)
+	UpdateFields(context.Context, *models.Role, types.UpdateRoleInput) error
+	Delete(context.Context, uint) error
 }
 
-func (rs *RoleService) ListRoles(ctx context.Context, input types.ListRolesInput) (*response.PaginateResponse[models.Role], *core.ErrorReturn) {
-	params := repository.NewPaginateParam()
-	params.Page = input.Page
-	params.PerPage = input.PerPage
-	params.Path = "/api/v1/rbac/roles"
+func NewRoleService(roleRepository RoleStore) RoleService {
+	return RoleService{RoleRepository: roleRepository}
+}
 
-	if input.Search != "" {
-		params.ExtraWheres = append(params.ExtraWheres, repository.WhereClause{
-			Query: "name LIKE ? OR slug LIKE ?",
-			Args:  []interface{}{"%" + input.Search + "%", "%" + input.Search + "%"},
-		})
-	}
-
-	roles, err := rs.RoleRepository.Paginate(ctx, params)
+func (rs *RoleService) ListRoles(ctx context.Context, input types.ListRolesInput) (*page.Result[models.Role], *core.ErrorReturn) {
+	roles, err := rs.RoleRepository.ListPage(ctx, page.Query{Number: input.Page, Size: input.PerPage, Search: input.Search})
 	if err != nil {
 		return nil, &core.ErrorReturn{
-			ErrorCode: response.ErrRoleInternalError,
+			ErrorCode: authcore.ErrRoleInternalError,
 			Err:       err,
 		}
 	}
@@ -45,7 +40,7 @@ func (rs *RoleService) ListRoles(ctx context.Context, input types.ListRolesInput
 
 func (rs *RoleService) CreateRole(ctx context.Context, input types.CreateRoleInput) (*models.Role, *core.ErrorReturn) {
 	if isReservedAdminSlug(input.Slug) {
-		return nil, &core.ErrorReturn{ErrorCode: response.ErrForbidden}
+		return nil, &core.ErrorReturn{ErrorCode: core.ErrForbidden}
 	}
 	role := &models.Role{
 		Name:        input.Name,
@@ -57,7 +52,7 @@ func (rs *RoleService) CreateRole(ctx context.Context, input types.CreateRoleInp
 	err := rs.RoleRepository.Create(ctx, role)
 	if err != nil {
 		return nil, &core.ErrorReturn{
-			ErrorCode: response.ErrRoleCreateFailed,
+			ErrorCode: authcore.ErrRoleCreateFailed,
 			Err:       err,
 		}
 	}
@@ -67,37 +62,28 @@ func (rs *RoleService) CreateRole(ctx context.Context, input types.CreateRoleInp
 
 func (rs *RoleService) UpdateRole(ctx context.Context, input types.UpdateRoleInput) (*models.Role, *core.ErrorReturn) {
 	if isReservedAdminSlug(input.Slug) {
-		return nil, &core.ErrorReturn{ErrorCode: response.ErrForbidden}
+		return nil, &core.ErrorReturn{ErrorCode: core.ErrForbidden}
 	}
-	role, err := rs.RoleRepository.FindOneByCondition(ctx, map[string]interface{}{
-		"id": input.ID,
-	})
+	role, err := rs.RoleRepository.FindByID(ctx, input.ID)
 	if err != nil {
 		return nil, &core.ErrorReturn{
-			ErrorCode: response.ErrRoleInternalError,
+			ErrorCode: authcore.ErrRoleInternalError,
 			Err:       err,
 		}
 	}
 	if role == nil {
 		return nil, &core.ErrorReturn{
-			ErrorCode: response.ErrRoleNotFound,
+			ErrorCode: authcore.ErrRoleNotFound,
 		}
 	}
 	if isReservedAdminSlug(role.Slug) {
-		return nil, &core.ErrorReturn{ErrorCode: response.ErrForbidden}
+		return nil, &core.ErrorReturn{ErrorCode: core.ErrForbidden}
 	}
 
-	updateData := map[string]interface{}{
-		"name":        input.Name,
-		"slug":        input.Slug,
-		"description": input.Description,
-		"updated_by":  input.UserID, // Set updated_by to the user updating the role
-	}
-
-	err = rs.RoleRepository.Update(ctx, role, updateData)
+	err = rs.RoleRepository.UpdateFields(ctx, role, input)
 	if err != nil {
 		return nil, &core.ErrorReturn{
-			ErrorCode: response.ErrRoleUpdateFailed,
+			ErrorCode: authcore.ErrRoleUpdateFailed,
 			Err:       err,
 		}
 	}
@@ -106,20 +92,20 @@ func (rs *RoleService) UpdateRole(ctx context.Context, input types.UpdateRoleInp
 }
 
 func (rs *RoleService) DeleteRole(ctx context.Context, input types.DeleteRoleInput) *core.ErrorReturn {
-	role, err := rs.RoleRepository.FindOneByCondition(ctx, map[string]interface{}{"id": input.ID})
+	role, err := rs.RoleRepository.FindByID(ctx, input.ID)
 	if err != nil {
-		return &core.ErrorReturn{ErrorCode: response.ErrRoleInternalError, Err: err}
+		return &core.ErrorReturn{ErrorCode: authcore.ErrRoleInternalError, Err: err}
 	}
 	if role == nil {
-		return &core.ErrorReturn{ErrorCode: response.ErrRoleNotFound}
+		return &core.ErrorReturn{ErrorCode: authcore.ErrRoleNotFound}
 	}
 	if isReservedAdminSlug(role.Slug) {
-		return &core.ErrorReturn{ErrorCode: response.ErrForbidden}
+		return &core.ErrorReturn{ErrorCode: core.ErrForbidden}
 	}
 	err = rs.RoleRepository.Delete(ctx, input.ID)
 	if err != nil {
 		return &core.ErrorReturn{
-			ErrorCode: response.ErrRoleDeleteFailed,
+			ErrorCode: authcore.ErrRoleDeleteFailed,
 			Err:       err,
 		}
 	}

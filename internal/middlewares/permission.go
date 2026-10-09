@@ -8,12 +8,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func CheckPermission(permission string) gin.HandlerFunc {
+func CheckPermission(permission string, permissionService services.PermissionService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user := c.MustGet("user").(*models.User)
 
 		ctx := c.Request.Context()
-		permissionService := services.NewPermissionService()
 		hasPermission, err := permissionService.CheckPermission(ctx, user.ID, permission)
 		if err != nil || !hasPermission {
 			c.AbortWithStatus(http.StatusForbidden)

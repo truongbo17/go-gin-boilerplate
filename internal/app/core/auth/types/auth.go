@@ -20,7 +20,14 @@ type RegisterInput struct {
 }
 
 type RegisterOutput struct {
-	User *models.User `json:"user"`
+	User               *models.User
+	NotificationQueued bool
+	NotificationErr    error
+}
+
+type ResetPasswordInput struct {
+	Token    string
+	Password string
 }
 
 type LogoutInput struct {

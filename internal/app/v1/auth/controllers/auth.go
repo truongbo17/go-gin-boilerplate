@@ -3,7 +3,6 @@ package controllers
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/truongbo17/go-gin-boilerplate/config"
-	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/enums"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/models"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/services"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/types"
@@ -12,21 +11,17 @@ import (
 	"github.com/truongbo17/go-gin-boilerplate/internal/response"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
-	"golang.org/x/crypto/bcrypt"
-	"net/http"
 )
 
 type AuthController struct {
 	Tracer      trace.Tracer
 	AuthService services.AuthService
-	UserService services.UserService
 }
 
-func NewAuthController() *AuthController {
+func NewAuthController(authService services.AuthService) *AuthController {
 	return &AuthController{
 		Tracer:      otel.Tracer("AuthController"),
-		AuthService: services.NewAuthService(),
-		UserService: services.NewUserService(),
+		AuthService: authService,
 	}
 }
 
@@ -52,7 +47,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		Password: requestBody.Password,
 	})
 	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
+		responses.ReturnError(ctx, err)
 		return
 	}
 
@@ -82,7 +77,7 @@ func (c *AuthController) Logout(ctx *gin.Context) {
 		Token: ctx.GetHeader(config.HeaderAuth),
 	})
 	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
+		responses.ReturnError(ctx, err)
 		return
 	}
 
@@ -122,28 +117,9 @@ func (c *AuthController) ChangePass(ctx *gin.Context) {
 	requestBody, _ := changePasswordRequest.(requests.ChangePasswordRequest)
 	user := ctx.MustGet("user").(*models.User)
 
-	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(requestBody.OldPassword))
-	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, response.ErrChangePass, nil)
-		return
-	}
-	newPass, err := c.AuthService.GeneratePassword(requestBody.NewPassword)
-	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, response.ErrChangePass, err)
-		return
-	}
-
-	err = c.UserService.UserRepository.Update(ctxHandler, user, &models.User{
-		Password: string(newPass),
-	})
-	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, response.ErrChangePass, err)
-		return
-	}
-	user.Password = string(newPass)
-	accessToken, err := c.AuthService.GenerateToken(ctxHandler, enums.TokenTypeAccess, user)
-	if err != nil {
-		response.ReturnError(ctx, http.StatusInternalServerError, response.ErrAuthGenerateToken, err)
+	accessToken, failure := c.AuthService.ChangePassword(ctxHandler, user, requestBody.OldPassword, requestBody.NewPassword)
+	if failure != nil {
+		responses.ReturnError(ctx, failure)
 		return
 	}
 

@@ -2,20 +2,21 @@ package logger
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"github.com/truongbo17/go-gin-boilerplate/config"
-	"gopkg.in/natefinch/lumberjack.v2"
 	"io"
 	"os"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/truongbo17/go-gin-boilerplate/config"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func InitLog() *logrus.Logger {
+func Open(env string) (*logrus.Logger, io.Closer) {
 	logger := logrus.New()
 	currentDate := time.Now()
 
 	logger.SetLevel(logrus.InfoLevel)
-	if config.EnvConfig.App.Env == config.DebugMode || config.EnvConfig.App.Env == config.LocalMode {
+	if env == config.DebugMode || env == config.LocalMode {
 		logger.SetLevel(logrus.DebugLevel)
 	}
 	logger.SetFormatter(&logrus.JSONFormatter{})
@@ -27,7 +28,7 @@ func InitLog() *logrus.Logger {
 	}
 
 	writers := []io.Writer{logFile}
-	if config.EnvConfig.Env != config.ReleaseMode {
+	if env != config.ReleaseMode {
 		writers = append(writers, os.Stdout)
 	}
 
@@ -35,5 +36,5 @@ func InitLog() *logrus.Logger {
 
 	fmt.Println("Success init logger with Logrus")
 
-	return logger
+	return logger, logFile
 }

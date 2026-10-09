@@ -2,30 +2,24 @@ package cache
 
 import (
 	"context"
-	"fmt"
-	"github.com/truongbo17/go-gin-boilerplate/config"
-	"github.com/truongbo17/go-gin-boilerplate/internal/infra/redis"
 	"time"
+
+	redisclient "github.com/redis/go-redis/v9"
+	"github.com/truongbo17/go-gin-boilerplate/config"
 )
 
 type ICache interface {
-	Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error
-	Get(ctx context.Context, key string) (interface{}, error)
+	Set(ctx context.Context, key string, value any, ttl time.Duration) error
+	Get(ctx context.Context, key string) (any, error)
 	Delete(ctx context.Context, key string) error
 }
 
 var _ ICache = (*Redis)(nil)
 var _ ICache = (*Local)(nil)
 
-var Cache ICache
-
-func InitCache() {
-	cacheConfig := config.EnvConfig.Cache
+func NewStore(cacheConfig config.Cache, client *redisclient.Client) ICache {
 	if cacheConfig.CacheStore == config.CacheStoreRedis {
-		Cache = NewRedis(redis.ClientRedis)
-	} else {
-		Cache = NewLocal(5*time.Minute, 10*time.Minute)
+		return NewRedis(client)
 	}
-
-	fmt.Println("Success init cache with store " + cacheConfig.CacheStore)
+	return NewLocal(5*time.Minute, 10*time.Minute)
 }

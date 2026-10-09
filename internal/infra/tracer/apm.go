@@ -14,13 +14,9 @@ import (
 	"time"
 )
 
-var AMPTracerProvider *trace.TracerProvider
-
-func InitTracerOTEL() error {
-	configTracer := config.EnvConfig.Tracer
-
+func Start(configTracer config.Tracer) (*trace.TracerProvider, error) {
 	if !configTracer.Enable {
-		return nil
+		return nil, nil
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -32,7 +28,7 @@ func InitTracerOTEL() error {
 		}),
 	)
 	if err != nil {
-		return fmt.Errorf("create trace exporter: %w", err)
+		return nil, fmt.Errorf("create trace exporter: %w", err)
 	}
 
 	re := resource.NewWithAttributes(
@@ -52,15 +48,5 @@ func InitTracerOTEL() error {
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
-	AMPTracerProvider = tp
-
-	fmt.Println("Success init tracer OTEL")
-	return nil
-}
-
-func Shutdown(ctx context.Context) error {
-	if AMPTracerProvider == nil {
-		return nil
-	}
-	return AMPTracerProvider.Shutdown(ctx)
+	return tp, nil
 }

@@ -4,21 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/hibiken/asynq"
 	json "github.com/json-iterator/go"
+	"github.com/sirupsen/logrus"
 	"github.com/truongbo17/go-gin-boilerplate/config"
-	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/register"
-	"github.com/truongbo17/go-gin-boilerplate/internal/infra/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
-	"time"
 )
 
-func Start() (*asynq.Server, error) {
-	EnvConfig := config.EnvConfig
-	configRedis := EnvConfig.Cache
-
+func StartWith(configRedis config.Cache, log *logrus.Logger, handlers map[string]asynq.HandlerFunc) (*asynq.Server, error) {
 	srv := asynq.NewServer(
 		asynq.RedisClientOpt{
 			Addr:     fmt.Sprintf("%s:%s", configRedis.RedisHost, configRedis.RedisPort),
@@ -34,16 +31,16 @@ func Start() (*asynq.Server, error) {
 				"low":      1,
 			},
 			RetryDelayFunc: retryDelay,
-			Logger:         logger.LogrusLogger,
-			ErrorHandler:   asynq.ErrorHandlerFunc(errorHandler),
+			Logger:         log,
+			ErrorHandler:   asynq.ErrorHandlerFunc(func(ctx context.Context, task *asynq.Task, err error) { errorHandler(log, ctx, task, err) }),
 			IsFailure:      func(err error) bool { return !isRateLimitError(err) },
 		},
 	)
 
 	mux := asynq.NewServeMux()
-	mux.Use(asynqTracingMiddleware)
+	mux.Use(workerTracingMiddleware)
 
-	for name, handler := range register.Handlers {
+	for name, handler := range handlers {
 		mux.HandleFunc(name, handler)
 	}
 
@@ -68,11 +65,11 @@ func retryDelay(n int, err error, _ *asynq.Task) time.Duration {
 	return min(time.Duration(5<<n)*time.Second, 5*time.Minute)
 }
 
-func asynqTracingMiddleware(next asynq.Handler) asynq.Handler {
+func workerTracingMiddleware(next asynq.Handler) asynq.Handler {
 	return asynq.HandlerFunc(func(ctx context.Context, task *asynq.Task) error {
-		var payload map[string]interface{}
+		var payload map[string]any
 		if err := json.Unmarshal(task.Payload(), &payload); err == nil {
-			if traceMap, ok := payload["tracer"].(map[string]interface{}); ok {
+			if traceMap, ok := payload["tracer"].(map[string]any); ok {
 				carrier := propagation.MapCarrier{}
 				for k, v := range traceMap {
 					if strVal, ok := v.(string); ok {
@@ -121,17 +118,29 @@ func isRateLimitError(err error) bool {
 	return errors.As(err, &de)
 }
 
-func errorHandler(ctx context.Context, task *asynq.Task, err error) {
-	if isRateLimitError(err) {
+func errorHandler(log *logrus.Logger, ctx context.Context, task *asynq.Task, err error) {
+	retried, _ := asynq.GetRetryCount(ctx)
+	maxRetry, hasMaxRetry := asynq.GetMaxRetry(ctx)
+	taskID, _ := asynq.GetTaskID(ctx)
+	queue, _ := asynq.GetQueueName(ctx)
+	fields := logrus.Fields{
+		"task_id": taskID, "task_type": task.Type(), "queue": queue,
+		"retry_count": retried, "max_retry": maxRetry, "error": err.Error(),
+	}
+	if errors.Is(err, asynq.RevokeTask) {
+		fields["outcome"] = "revoked"
+		log.WithFields(fields).Warn("job revoked")
 		return
 	}
-
-	retried, _ := asynq.GetRetryCount(ctx)
-	maxRetry, _ := asynq.GetMaxRetry(ctx)
-	if retried >= maxRetry {
-		err = fmt.Errorf("retry exhausted for task %q: %w", task.Type(), err)
+	if errors.Is(err, asynq.SkipRetry) || (hasMaxRetry && retried >= maxRetry) {
+		fields["outcome"] = "archived"
+		log.WithFields(fields).Error("job failed permanently")
+		return
 	}
-
-	logApp := logger.LogrusLogger
-	logApp.Errorf("Job failed: type=%q error=%v", task.Type(), err)
+	fields["outcome"] = "retrying"
+	if isRateLimitError(err) {
+		log.WithFields(fields).Info("job delayed")
+		return
+	}
+	log.WithFields(fields).Warn("job failed; retry scheduled")
 }

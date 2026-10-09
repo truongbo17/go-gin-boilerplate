@@ -4,11 +4,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/truongbo17/go-gin-boilerplate/config"
-	"github.com/truongbo17/go-gin-boilerplate/internal/infra/logger"
 	"time"
 )
 
-func RequestLogger() gin.HandlerFunc {
+func RequestLoggerWith(log *logrus.Logger) gin.HandlerFunc {
 	return func(context *gin.Context) {
 		timeNow := time.Now()
 		requestId := context.GetString(config.HeaderRequestID)
@@ -29,7 +28,7 @@ func RequestLogger() gin.HandlerFunc {
 			return
 		}
 
-		logger.LogrusLogger.WithFields(logrus.Fields{
+		fields := logrus.Fields{
 			"request_id": requestId,
 			"client_ip":  clientIp,
 			"user_agent": userAgent,
@@ -37,6 +36,10 @@ func RequestLogger() gin.HandlerFunc {
 			"path":       path,
 			"status":     context.Writer.Status(),
 			"latency_ms": time.Since(timeNow).Milliseconds(),
-		}).Info("request completed")
+		}
+		if len(context.Errors) > 0 {
+			fields["error"] = context.Errors.Last().Error()
+		}
+		log.WithFields(fields).Info("request completed")
 	}
 }

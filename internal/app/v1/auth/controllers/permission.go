@@ -5,8 +5,8 @@ import (
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/types"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/v1/auth/requests"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/v1/auth/responses"
+	"github.com/truongbo17/go-gin-boilerplate/internal/request"
 	"github.com/truongbo17/go-gin-boilerplate/internal/response"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
@@ -18,10 +18,10 @@ type PermissionController struct {
 	PermissionService services.PermissionService
 }
 
-func NewPermissionController() *PermissionController {
+func NewPermissionController(permissionService services.PermissionService) *PermissionController {
 	return &PermissionController{
 		Tracer:            otel.Tracer("PermissionController"),
-		PermissionService: services.NewPermissionService(),
+		PermissionService: permissionService,
 	}
 }
 
@@ -49,12 +49,12 @@ func (c *PermissionController) ListPermissions(ctx *gin.Context) {
 		PerPage: requestBody.PerPage,
 	})
 	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
+		responses.ReturnError(ctx, err)
 		return
 	}
 
 	var permissionResponses []responses.PermissionResponse
-	for _, permission := range *permissions.Data {
+	for _, permission := range permissions.Items {
 		permissionResponses = append(permissionResponses, responses.PermissionResponse{
 			ID:          permission.ID,
 			Name:        permission.Name,
@@ -65,7 +65,7 @@ func (c *PermissionController) ListPermissions(ctx *gin.Context) {
 		})
 	}
 
-	response.ReturnSuccess(ctx, permissionResponses, permissions.MetaData)
+	response.ReturnSuccess(ctx, permissionResponses, response.PageMeta(ctx, *permissions))
 }
 
 // CreatePermission godoc
@@ -92,7 +92,7 @@ func (c *PermissionController) CreatePermission(ctx *gin.Context) {
 		Description: requestBody.Description,
 	})
 	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
+		responses.ReturnError(ctx, err)
 		return
 	}
 
@@ -122,7 +122,7 @@ func (c *PermissionController) UpdatePermission(ctx *gin.Context) {
 	ctxHandler, span := c.Tracer.Start(ctx.Request.Context(), "UpdatePermission")
 	defer span.End()
 
-	id, ok := parseID(ctx)
+	id, ok := request.PathID(ctx)
 	if !ok {
 		return
 	}
@@ -137,7 +137,7 @@ func (c *PermissionController) UpdatePermission(ctx *gin.Context) {
 		Description: requestBody.Description,
 	})
 	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
+		responses.ReturnError(ctx, err)
 		return
 	}
 
@@ -166,7 +166,7 @@ func (c *PermissionController) DeletePermission(ctx *gin.Context) {
 	ctxHandler, span := c.Tracer.Start(ctx.Request.Context(), "DeletePermission")
 	defer span.End()
 
-	id, ok := parseID(ctx)
+	id, ok := request.PathID(ctx)
 	if !ok {
 		return
 	}
@@ -175,7 +175,7 @@ func (c *PermissionController) DeletePermission(ctx *gin.Context) {
 		ID: id,
 	})
 	if err != nil {
-		response.ReturnError(ctx, http.StatusOK, err.ErrorCode, err.Err)
+		responses.ReturnError(ctx, err)
 		return
 	}
 

@@ -13,3 +13,7 @@ type UserResponse struct {
 	CreatedAt *time.Time   `json:"created_at"`
 	UpdatedAt *time.Time   `json:"updated_at"`
 }
+
+type UserRolesResponse struct {
+	Roles []RoleResponse `json:"roles"`
+}

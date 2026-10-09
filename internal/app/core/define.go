@@ -1,7 +1,7 @@
 package core
 
 type ErrorReturn struct {
-	Err       interface{}
+	Err       any
 	ErrorCode int
 	Message   string
 }

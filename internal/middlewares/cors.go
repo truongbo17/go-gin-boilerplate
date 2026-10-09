@@ -3,17 +3,15 @@ package middlewares
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/truongbo17/go-gin-boilerplate/config"
 	"strings"
 )
 
-func Cors() gin.HandlerFunc {
-	patternAllowOrigin := config.EnvConfig.Cors.AllowOrigin
+func CorsWith(patternAllowOrigin string) gin.HandlerFunc {
 	allowOrigin := []string{"http://localhost:3000"}
 
 	if patternAllowOrigin != "" {
 		allowOrigin = nil
-		for _, origin := range strings.Split(patternAllowOrigin, ",") {
+		for origin := range strings.SplitSeq(patternAllowOrigin, ",") {
 			if origin = strings.TrimSpace(origin); origin != "" {
 				allowOrigin = append(allowOrigin, origin)
 			}

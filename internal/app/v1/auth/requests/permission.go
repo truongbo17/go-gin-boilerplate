@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/truongbo17/go-gin-boilerplate/config"
-	"github.com/truongbo17/go-gin-boilerplate/internal/infra/i18n"
+	"github.com/truongbo17/go-gin-boilerplate/internal/i18n"
 	"github.com/truongbo17/go-gin-boilerplate/internal/request"
 	"net/http"
 )
@@ -33,7 +33,7 @@ func (a ListPermissionRequest) Validate(lang string) error {
 func ListPermissionValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var listPermissionRequest ListPermissionRequest
-		if !bindRequest(context, &listPermissionRequest) {
+		if !request.Bind(context, &listPermissionRequest) {
 			return
 		}
 
@@ -72,7 +72,7 @@ func (a CreatePermissionRequest) Validate(lang string) error {
 func CreatePermissionValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var createPermissionRequest CreatePermissionRequest
-		if !bindRequest(context, &createPermissionRequest) {
+		if !request.Bind(context, &createPermissionRequest) {
 			return
 		}
 
@@ -111,7 +111,7 @@ func (a UpdatePermissionRequest) Validate(lang string) error {
 func UpdatePermissionValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var updatePermissionRequest UpdatePermissionRequest
-		if !bindRequest(context, &updatePermissionRequest) {
+		if !request.Bind(context, &updatePermissionRequest) {
 			return
 		}
 

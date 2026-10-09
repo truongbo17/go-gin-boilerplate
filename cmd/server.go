@@ -3,70 +3,88 @@ package cmd
 import (
 	"context"
 	"errors"
-	"github.com/spf13/cobra"
-	"github.com/truongbo17/go-gin-boilerplate/config"
-	"github.com/truongbo17/go-gin-boilerplate/internal/infra/limiter"
-	"github.com/truongbo17/go-gin-boilerplate/internal/routes"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/spf13/cobra"
+	"github.com/truongbo17/go-gin-boilerplate/config"
+	coreworker "github.com/truongbo17/go-gin-boilerplate/internal/app/core/worker"
+	"github.com/truongbo17/go-gin-boilerplate/internal/health"
+	"github.com/truongbo17/go-gin-boilerplate/internal/infra/worker/client"
+	"github.com/truongbo17/go-gin-boilerplate/internal/middlewares/limiter"
+	"github.com/truongbo17/go-gin-boilerplate/internal/routes"
 )
 
-var (
-	StartServerCmd = &cobra.Command{
-		Use:   "server",
-		Short: `Start the server`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return start()
+var StartServerCmd = &cobra.Command{
+	Use:   "server",
+	Short: "Start the server",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return withRuntime(cmd, requirements{database: true, cache: true, tracing: true}, func(r *runtime) error {
+			return runServer(cmd, r)
+		})
+	},
+}
+
+func runServer(cmd *cobra.Command, r *runtime) error {
+	if r.config.App.Env == config.ReleaseMode {
+		gin.SetMode(gin.ReleaseMode)
+	}
+	rateLimiter, err := limiter.New(r.config.Cache.CacheStore, r.redis)
+	if err != nil {
+		return err
+	}
+	var jobs coreworker.Dispatcher
+	if r.config.Mail.Enabled {
+		queue := client.New(r.config.Cache)
+		defer queue.Close()
+		jobs = coreworker.New(queue)
+	}
+	router, err := routes.New(routes.Options{
+		Config:         r.config,
+		DB:             r.db,
+		TokenBlacklist: r.cache,
+		Readiness: health.Checker{
+			DB:         r.db,
+			Redis:      r.redis,
+			CheckRedis: r.config.Cache.CacheStore == config.CacheStoreRedis,
 		},
+		Limiter: rateLimiter,
+		Logger:  r.log,
+		Jobs:    jobs,
+	})
+	if err != nil {
+		return err
 	}
-)
-
-func start() error {
-	EnvConfig := config.EnvConfig
-	storeCache := EnvConfig.Cache.CacheStore
-
-	limiter.InitLimiterStore(storeCache)
-
-	routes.Init()
-	r := routes.Router
-
 	server := &http.Server{
-		Addr:              ":" + EnvConfig.App.Port,
-		WriteTimeout:      time.Second * 30,
-		ReadTimeout:       time.Second * 30,
+		Addr:              ":" + r.config.App.Port,
+		WriteTimeout:      30 * time.Second,
+		ReadTimeout:       30 * time.Second,
 		ReadHeaderTimeout: 5 * time.Second,
-		IdleTimeout:       time.Second * 30,
+		IdleTimeout:       30 * time.Second,
 		MaxHeaderBytes:    1 << 20,
-		Handler:           r,
+		Handler:           router,
 	}
-
-	log.Printf("Server is now listening at port: %s. Good luck!", EnvConfig.App.Port)
 
 	serverError := make(chan error, 1)
 	go func() { serverError <- server.ListenAndServe() }()
-
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	defer signal.Stop(quit)
+	r.log.Infof("Server is listening on port %s", r.config.App.Port)
+	ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 	select {
 	case err := <-serverError:
 		if errors.Is(err, http.ErrServerClosed) {
 			return nil
 		}
 		return err
-	case i := <-quit:
-		log.Println("Server receive a signal: ", i.String())
+	case <-ctx.Done():
+		r.log.Info("Server shutting down")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := server.Shutdown(ctx); err != nil {
-		return err
-	}
-	log.Println("Server exiting.")
-	return nil
+	return server.Shutdown(shutdownCtx)
 }

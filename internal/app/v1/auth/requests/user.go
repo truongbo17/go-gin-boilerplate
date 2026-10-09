@@ -1,8 +1,13 @@
 package requests
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/truongbo17/go-gin-boilerplate/config"
+	"github.com/truongbo17/go-gin-boilerplate/internal/i18n"
+	"github.com/truongbo17/go-gin-boilerplate/internal/request"
 )
 
 type ListUserRequest struct {
@@ -14,7 +19,7 @@ type ListUserRequest struct {
 func ListUserValidator() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var req ListUserRequest
-		if !bindRequest(ctx, &req) {
+		if !request.Bind(ctx, &req) {
 			return
 		}
 
@@ -31,8 +36,41 @@ func ListUserValidator() gin.HandlerFunc {
 		if req.PerPage > 100 {
 			req.PerPage = 100
 		}
+		if len(req.Search) > 100 {
+			ctx.AbortWithStatus(http.StatusUnprocessableEntity)
+			return
+		}
 
 		ctx.Set("ListUserRequest", req)
 		ctx.Next()
+	}
+}
+
+type AssignRoleToUserRequest struct {
+	RoleIDs []uint `json:"role_ids" form:"role_ids"`
+}
+
+func (a AssignRoleToUserRequest) Validate(lang string) error {
+	return validation.ValidateStruct(&a,
+		validation.Field(&a.RoleIDs,
+			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
+		),
+	)
+}
+
+func AssignRoleToUserValidator() gin.HandlerFunc {
+	return func(context *gin.Context) {
+		var assignRoleToUserRequest AssignRoleToUserRequest
+		if !request.Bind(context, &assignRoleToUserRequest) {
+			return
+		}
+
+		if err := assignRoleToUserRequest.Validate(context.GetString(config.HeaderLanguage)); err != nil {
+			_ = context.AbortWithError(http.StatusUnprocessableEntity, err)
+			return
+		}
+
+		context.Set("AssignRoleToUserRequest", assignRoleToUserRequest)
+		context.Next()
 	}
 }

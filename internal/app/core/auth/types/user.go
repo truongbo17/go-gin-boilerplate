@@ -14,6 +14,13 @@ type (
 		Password string
 	}
 
+	ProvisionUserInput struct {
+		Username string
+		Email    string
+		Password string
+		Admin    bool
+	}
+
 	UpdateUserInput struct {
 		ID       uint
 		UserID   uint
@@ -36,4 +43,10 @@ type ListUsersInput struct {
 	Search  string `json:"search"`
 	Page    int    `json:"page"`
 	PerPage int    `json:"per_page"`
+}
+
+type AssignRoleToUserInput struct {
+	UserID  uint   `json:"user_id"`
+	ActorID uint   `json:"actor_id"`
+	RoleIDs []uint `json:"role_ids"`
 }

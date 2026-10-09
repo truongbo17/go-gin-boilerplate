@@ -1,0 +1,11 @@
+type User {
+  id: ID!
+  username: String!
+  email: String!
+  status: Int!
+}
+
+type Query {
+  "The currently authenticated user."
+  me: User!
+}

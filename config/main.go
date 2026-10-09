@@ -3,10 +3,11 @@ package config
 import (
 	"errors"
 	"fmt"
+	"os"
+
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/spf13/viper"
-	"os"
 )
 
 type Config struct {
@@ -15,6 +16,7 @@ type Config struct {
 	Database `mapstructure:",squash"`
 	Cache    `mapstructure:",squash"`
 	Auth     `mapstructure:",squash"`
+	Mail     `mapstructure:",squash"`
 	Tracer   `mapstructure:",squash"`
 }
 
@@ -28,23 +30,15 @@ const (
 )
 
 func (config *Config) validate() error {
+	if err := config.validateDatabase(); err != nil {
+		return err
+	}
 	err := validation.ValidateStruct(config,
 		// App
 		validation.Field(&config.App.Port, is.Port),
-		validation.Field(&config.App.Env, validation.In(DebugMode, ReleaseMode, LocalMode)),
 
 		// CORS
 		validation.Field(&config.Cors.AllowOrigin),
-
-		// Database
-		validation.Field(&config.Database.Master.Port, validation.Required, is.Port),
-		validation.Field(&config.Database.Master.Host, validation.Required, is.Host),
-		validation.Field(&config.Database.Master.Username, validation.Required),
-		validation.Field(&config.Database.Master.Database, validation.Required),
-		validation.Field(&config.Database.Master.MaxOpenConns, validation.Required, validation.Min(1)),
-		validation.Field(&config.Database.Master.MaxIdleConns, validation.Min(0), validation.Max(config.Database.Master.MaxOpenConns)),
-		validation.Field(&config.Database.Master.ConnMaxLifetimeMinutes, validation.Min(0)),
-		validation.Field(&config.Database.Master.ConnMaxIdleTimeMinutes, validation.Min(0)),
 
 		// Cache
 		validation.Field(&config.Cache.CacheStore, validation.In(CacheStoreLocal, CacheStoreRedis)),
@@ -59,17 +53,57 @@ func (config *Config) validate() error {
 		return err
 	}
 	if config.Cache.CacheStore == CacheStoreRedis {
-		return validation.ValidateStruct(config,
+		if err := validation.ValidateStruct(config,
 			validation.Field(&config.Cache.RedisHost, validation.Required, is.Host),
 			validation.Field(&config.Cache.RedisPort, validation.Required, is.Port),
-		)
+		); err != nil {
+			return err
+		}
 	}
-	return nil
+	return config.validateMail()
 }
 
-var EnvConfig *Config
+func (config *Config) validateWorker() error {
+	if err := validation.ValidateStruct(config,
+		validation.Field(&config.App.Env, validation.In(DebugMode, ReleaseMode, LocalMode)),
+		validation.Field(&config.Cache.CacheStore, validation.In(CacheStoreRedis)),
+		validation.Field(&config.Cache.RedisHost, validation.Required, is.Host),
+		validation.Field(&config.Cache.RedisPort, validation.Required, is.Port),
+		validation.Field(&config.Tracer.SampleRatio, validation.Min(0.0), validation.Max(1.0)),
+	); err != nil {
+		return err
+	}
+	if config.Mail.Enabled {
+		if err := config.validateDatabase(); err != nil {
+			return err
+		}
+		if err := validation.Validate(config.Auth.JWTSecretKey, validation.Required, validation.Length(32, 0)); err != nil {
+			return err
+		}
+	}
+	return config.validateMail()
+}
+
+func (config *Config) validateDatabase() error {
+	return validation.ValidateStruct(config,
+		validation.Field(&config.App.Env, validation.In(DebugMode, ReleaseMode, LocalMode)),
+		validation.Field(&config.Database.Master.Port, validation.Required, is.Port),
+		validation.Field(&config.Database.Master.Host, validation.Required, is.Host),
+		validation.Field(&config.Database.Master.Username, validation.Required),
+		validation.Field(&config.Database.Master.Database, validation.Required),
+		validation.Field(&config.Database.Master.MaxOpenConns, validation.Required, validation.Min(1)),
+		validation.Field(&config.Database.Master.MaxIdleConns, validation.Min(0), validation.Max(config.Database.Master.MaxOpenConns)),
+		validation.Field(&config.Database.Master.ConnMaxLifetimeMinutes, validation.Min(0)),
+		validation.Field(&config.Database.Master.ConnMaxIdleTimeMinutes, validation.Min(0)),
+	)
+}
 
 func setupConfig() (*Config, error) {
+	return load((*Config).validate)
+}
+
+func load(validate func(*Config) error) (*Config, error) {
+	viper := viper.New()
 	viper.SetConfigFile(".env")
 	viper.SetConfigType("env")
 
@@ -92,6 +126,7 @@ func setupConfig() (*Config, error) {
 	for _, key := range []string{
 		"APP_NAME", "APP_URL", "DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_DATABASE",
 		"REDIS_HOST", "REDIS_PORT", "REDIS_USERNAME", "REDIS_PASSWORD", "JWT_SECRET",
+		"MAIL_ENABLED", "MAIL_HOST", "MAIL_PORT", "MAIL_USERNAME", "MAIL_PASSWORD", "MAIL_FROM", "MAIL_TLS_MODE", "PASSWORD_RESET_URL",
 		"ELASTIC_APM_SERVER_URL", "ELASTIC_APM_SECRET_TOKEN", "ELASTIC_APM_SERVICE_NAME",
 		"ELASTIC_APM_GLOBAL_LABELS",
 	} {
@@ -111,20 +146,24 @@ func setupConfig() (*Config, error) {
 		return nil, fmt.Errorf("decode config: %w", err)
 	}
 
-	if err := config.validate(); err != nil {
+	if err := validate(config); err != nil {
 		return nil, fmt.Errorf("validate config: %w", err)
 	}
 
 	return config, nil
 }
 
-func Init() error {
-	loaded, err := setupConfig()
-	if err != nil {
-		return err
-	}
-	EnvConfig = loaded
+// Load reads and validates a fresh configuration without changing package state.
+func Load() (*Config, error) {
+	return setupConfig()
+}
 
-	fmt.Println("Success init config")
-	return nil
+// LoadWorker validates only the settings needed to run Redis-backed jobs.
+func LoadWorker() (*Config, error) {
+	return load((*Config).validateWorker)
+}
+
+// LoadDatabase validates only the settings needed by database commands.
+func LoadDatabase() (*Config, error) {
+	return load((*Config).validateDatabase)
 }

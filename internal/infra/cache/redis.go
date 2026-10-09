@@ -15,11 +15,11 @@ func NewRedis(client *redis.Client) *Redis {
 	return &Redis{client: client}
 }
 
-func (r *Redis) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+func (r *Redis) Set(ctx context.Context, key string, value any, ttl time.Duration) error {
 	return r.client.Set(ctx, key, value, ttl).Err()
 }
 
-func (r *Redis) Get(ctx context.Context, key string) (interface{}, error) {
+func (r *Redis) Get(ctx context.Context, key string) (any, error) {
 	val, err := r.client.Get(ctx, key).Result()
 	if errors.Is(err, redis.Nil) {
 		return nil, nil

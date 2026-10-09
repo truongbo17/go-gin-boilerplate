@@ -1,0 +1,545 @@
+openapi: 3.0.3
+info:
+  title: Go Gin Boilerplate API
+  version: 1.0.0
+  description: REST endpoints for authentication and RBAC. GraphQL has its own schema.
+servers:
+  - url: /
+paths:
+  /ping:
+    get:
+      tags: [Health]
+      summary: Process health
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /ready:
+    get:
+      tags: [Health]
+      summary: MySQL and configured Redis readiness
+      responses:
+        '200': { description: Dependencies are ready }
+        '503': { description: A required dependency is unavailable }
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in and receive an access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      operationId: registerUser
+      summary: Register a user
+      description: >-
+        Creates an active user. When MAIL_ENABLED=true, the server queues a welcome
+        email after the database insert; email delivery happens asynchronously.
+        The email_queued field reports whether the job was enqueued; the user remains
+        created if queueing fails. No access token is returned. Limited to 5 requests
+        per minute per client IP.
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/Language' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterInput' }
+            example:
+              username: alice
+              email: alice@example.test
+              password: StrongPass1!
+      responses:
+        '200':
+          description: User created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RegisterResponse' }
+              example:
+                status: true
+                status_code: 200
+                request_id: 00000000-0000-0000-0000-000000000001
+                message: Success.
+                data: { id: 1, email_queued: true }
+                extra_data: null
+                errors: null
+        '409':
+          description: Username or email already exists
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Envelope' }
+              example:
+                status: false
+                status_code: 2004
+                request_id: 00000000-0000-0000-0000-000000000001
+                message: User already exists.
+                data: null
+                extra_data: null
+                errors: null
+        '413': { description: Request body exceeds the 1 MiB limit }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/Error' }
+        '503': { description: Rate limit backend unavailable }
+  /api/v1/auth/forgot-password:
+    post:
+      tags: [Auth]
+      operationId: requestPasswordReset
+      summary: Queue a password reset email if the account exists
+      description: >-
+        Requires MAIL_ENABLED=true and a running worker. Returns the same 202 response
+        for known and unknown addresses. The worker sends a reset link only for an
+        active account. Limited to 5 requests per minute per client IP.
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/Language' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ForgotPasswordInput' }
+            example: { email: alice@example.test }
+      responses:
+        '202':
+          description: Request accepted; delivery is asynchronous
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Envelope' }
+              example:
+                status: true
+                status_code: 202
+                request_id: 00000000-0000-0000-0000-000000000001
+                message: If the account exists, a reset email will be sent.
+                data: null
+                extra_data: null
+                errors: null
+        '413': { description: Request body exceeds the 1 MiB limit }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503':
+          description: Password reset is unavailable; the rate limit backend can also return an empty 503
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Envelope' }
+              example:
+                status: false
+                status_code: 2008
+                request_id: 00000000-0000-0000-0000-000000000001
+                message: Password reset is temporarily unavailable.
+                data: null
+                extra_data: null
+                errors: null
+  /api/v1/auth/reset-password:
+    post:
+      tags: [Auth]
+      operationId: resetPassword
+      summary: Set a new password with an emailed reset token
+      description: >-
+        The token is valid for 15 minutes and becomes unusable after a successful
+        password change. Existing access tokens for the account also become invalid.
+        Limited to 10 requests per minute per client IP.
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/Language' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResetPasswordInput' }
+            example:
+              token: PASTE_TOKEN_FROM_EMAIL_LINK
+              new_password: AnotherStrong1!
+              confirm_password: AnotherStrong1!
+      responses:
+        '200':
+          description: Password changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Envelope' }
+              example:
+                status: true
+                status_code: 200
+                request_id: 00000000-0000-0000-0000-000000000001
+                message: Success.
+                data: null
+                extra_data: null
+                errors: null
+        '400':
+          description: Reset token is invalid, expired, or already used
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Envelope' }
+              example:
+                status: false
+                status_code: 2009
+                request_id: 00000000-0000-0000-0000-000000000001
+                message: Invalid or expired reset token.
+                data: null
+                extra_data: null
+                errors: null
+        '413': { description: Request body exceeds the 1 MiB limit }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/Error' }
+        '503': { description: Rate limit backend unavailable }
+  /api/v1/auth/me:
+    get:
+      tags: [Auth]
+      summary: Get the current user
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoke the current access token
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/auth/change-pass:
+    post:
+      tags: [Auth]
+      summary: Change password and receive a new access token
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChangePasswordInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/Error' }
+  /api/v1/rbac/roles:
+    get:
+      tags: [Roles]
+      summary: List roles
+      security: [{ bearerAuth: [] }]
+      x-required-permission: role:index
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PerPage' }
+        - { $ref: '#/components/parameters/Search' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Roles]
+      summary: Create a role
+      security: [{ bearerAuth: [] }]
+      x-required-permission: role:create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RoleInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/rbac/roles/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/ID' }
+    put:
+      tags: [Roles]
+      summary: Update a role
+      security: [{ bearerAuth: [] }]
+      x-required-permission: role:update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RoleInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    delete:
+      tags: [Roles]
+      summary: Delete a role
+      security: [{ bearerAuth: [] }]
+      x-required-permission: role:delete
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/rbac/roles/{id}/permissions:
+    parameters:
+      - { $ref: '#/components/parameters/ID' }
+    get:
+      tags: [Roles]
+      summary: Get permissions assigned to a role
+      security: [{ bearerAuth: [] }]
+      x-required-permission: role:assign_permission
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Roles]
+      summary: Assign permissions to a role
+      security: [{ bearerAuth: [] }]
+      x-required-permission: role:assign_permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssignPermissionsInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/rbac/permissions:
+    get:
+      tags: [Permissions]
+      summary: List permissions
+      security: [{ bearerAuth: [] }]
+      x-required-permission: permission:index
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PerPage' }
+        - { $ref: '#/components/parameters/Search' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Permissions]
+      summary: Create a permission
+      security: [{ bearerAuth: [] }]
+      x-required-permission: permission:create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PermissionInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/rbac/permissions/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/ID' }
+    put:
+      tags: [Permissions]
+      summary: Update a permission
+      security: [{ bearerAuth: [] }]
+      x-required-permission: permission:update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PermissionInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    delete:
+      tags: [Permissions]
+      summary: Delete a permission
+      security: [{ bearerAuth: [] }]
+      x-required-permission: permission:delete
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/rbac/users:
+    get:
+      tags: [Users]
+      summary: List users
+      security: [{ bearerAuth: [] }]
+      x-required-permission: user:index
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PerPage' }
+        - { $ref: '#/components/parameters/Search' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/rbac/users/{id}/roles:
+    parameters:
+      - { $ref: '#/components/parameters/ID' }
+    get:
+      tags: [Users]
+      summary: Get roles assigned to a user
+      security: [{ bearerAuth: [] }]
+      x-required-permission: user:assign_role
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Users]
+      summary: Assign roles to a user
+      security: [{ bearerAuth: [] }]
+      x-required-permission: user:assign_role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssignRolesInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/graphql:
+    post:
+      tags: [GraphQL]
+      summary: Execute an authenticated GraphQL query
+      description: See internal/app/graphql/auth/schema.graphqls for the schema.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GraphQLInput' }
+      responses:
+        '200': { description: GraphQL data or GraphQL errors }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Language:
+      name: X-Language
+      in: header
+      required: false
+      description: Response language; examples below use en.
+      schema: { type: string, enum: [en, vi], default: vi }
+    ID:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PerPage:
+      name: per_page
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    Search:
+      name: search
+      in: query
+      schema: { type: string, maxLength: 100 }
+  responses:
+    Success:
+      description: Successful response
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Envelope' }
+    Error:
+      description: Invalid request or operation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Envelope' }
+    Unauthorized:
+      description: Missing or invalid access token
+    Forbidden:
+      description: Missing permission
+    RateLimited:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema: { type: integer }
+  schemas:
+    Envelope:
+      type: object
+      required: [status, status_code, request_id, message, data, extra_data, errors]
+      properties:
+        status: { type: boolean, description: True for a successful response }
+        status_code: { type: integer, description: Application status or error code }
+        request_id: { type: string, format: uuid }
+        message: { type: string, description: Localized human-readable message }
+        data: {}
+        extra_data: {}
+        errors: {}
+    RegisterResponse:
+      allOf:
+        - { $ref: '#/components/schemas/Envelope' }
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [id, email_queued]
+              properties:
+                id: { type: integer, minimum: 1, description: ID of the created user }
+                email_queued: { type: boolean, description: Whether a welcome email job was enqueued }
+    LoginInput:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string }
+        password: { type: string, format: password }
+    RegisterInput:
+      type: object
+      required: [username, email, password]
+      properties:
+        username: { type: string, minLength: 3, maxLength: 50 }
+        email: { type: string, format: email, maxLength: 100 }
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 64
+          description: Requires upper and lower case letters, a digit, and a special character.
+    ForgotPasswordInput:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email, maxLength: 100 }
+    ResetPasswordInput:
+      type: object
+      required: [token, new_password, confirm_password]
+      properties:
+        token: { type: string, maxLength: 2048, description: Token from the emailed reset link }
+        new_password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 64
+          description: Requires upper and lower case letters, a digit, and a special character.
+        confirm_password: { type: string, format: password, description: Must match new_password }
+    ChangePasswordInput:
+      type: object
+      required: [old_password, new_password, confirm_password]
+      properties:
+        old_password: { type: string, format: password }
+        new_password: { type: string, format: password }
+        confirm_password: { type: string, format: password }
+    RoleInput:
+      type: object
+      required: [name, slug]
+      properties:
+        name: { type: string, maxLength: 100 }
+        slug: { type: string, maxLength: 100 }
+        description: { type: string, maxLength: 500 }
+    PermissionInput:
+      type: object
+      required: [name, slug]
+      properties:
+        name: { type: string, maxLength: 100 }
+        slug: { type: string, maxLength: 100 }
+        description: { type: string, maxLength: 500 }
+    AssignPermissionsInput:
+      type: object
+      required: [permission_ids]
+      properties:
+        permission_ids:
+          type: array
+          items: { type: integer, minimum: 1 }
+    AssignRolesInput:
+      type: object
+      required: [role_ids]
+      properties:
+        role_ids:
+          type: array
+          items: { type: integer, minimum: 1 }
+    GraphQLInput:
+      type: object
+      required: [query]
+      properties:
+        query: { type: string, example: '{ me { id username email status } }' }
+        variables: { type: object, additionalProperties: true }
+        operationName: { type: string }

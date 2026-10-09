@@ -16,12 +16,12 @@ func NewLocal(defaultExpiration, cleanupInterval time.Duration) *Local {
 	}
 }
 
-func (l *Local) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+func (l *Local) Set(ctx context.Context, key string, value any, ttl time.Duration) error {
 	l.store.Set(key, value, ttl)
 	return nil
 }
 
-func (l *Local) Get(ctx context.Context, key string) (interface{}, error) {
+func (l *Local) Get(ctx context.Context, key string) (any, error) {
 	val, found := l.store.Get(key)
 	if !found {
 		return nil, nil
