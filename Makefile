@@ -1,10 +1,7 @@
-.PHONY: build test vet fmt tidy
+.PHONY: build vet fmt tidy
 
 build:
 	go build -o build/ggb .
-
-test:
-	go test ./...
 
 vet:
 	go vet ./...
