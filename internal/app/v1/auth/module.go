@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"errors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/truongbo17/go-gin-boilerplate/config"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/services"
@@ -36,17 +38,20 @@ type Dependencies struct {
 	Jobs           coreworker.Dispatcher
 }
 
-func NewModule(deps Dependencies) *Module {
-	userRepository := authrepository.NewUserRepository(deps.DB)
-	roleRepository := authrepository.NewRoleRepository(deps.DB)
-	permissionRepository := authrepository.NewPermissionRepository(deps.DB)
+func NewModule(params Dependencies) (*Module, error) {
+	if params.DB == nil || params.TokenBlacklist == nil || params.Limiter == nil {
+		return nil, errors.New("auth module requires DB, token blacklist, and limiter")
+	}
+	userRepository := authrepository.NewUserRepository(params.DB)
+	roleRepository := authrepository.NewRoleRepository(params.DB)
+	permissionRepository := authrepository.NewPermissionRepository(params.DB)
 
-	authService := services.NewAuthService(userRepository, deps.TokenBlacklist, services.AuthSettings{
-		JWTSecretKey:               deps.Auth.JWTSecretKey,
-		JWTAccessExpirationMinutes: deps.Auth.JWTAccessExpirationMinutes,
-		JWTRefreshExpirationDays:   deps.Auth.JWTRefreshExpirationDays,
+	authService := services.NewAuthService(userRepository, params.TokenBlacklist, services.AuthSettings{
+		JWTSecretKey:               params.Auth.JWTSecretKey,
+		JWTAccessExpirationMinutes: params.Auth.JWTAccessExpirationMinutes,
+		JWTRefreshExpirationDays:   params.Auth.JWTRefreshExpirationDays,
 	})
-	authService.Jobs = deps.Jobs
+	authService.Jobs = params.Jobs
 	userService := services.NewUserService(userRepository)
 	roleService := services.NewRoleService(roleRepository)
 	permissionService := services.NewPermissionService(permissionRepository)
@@ -54,10 +59,10 @@ func NewModule(deps Dependencies) *Module {
 	return &Module{
 		authService:          authService,
 		permissionService:    permissionService,
-		limiter:              deps.Limiter,
+		limiter:              params.Limiter,
 		authController:       controllers.NewAuthController(authService),
 		userController:       controllers.NewUserController(userService),
 		roleController:       controllers.NewRoleController(roleService, permissionService),
 		permissionController: controllers.NewPermissionController(permissionService),
-	}
+	}, nil
 }

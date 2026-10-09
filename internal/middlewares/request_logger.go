@@ -24,7 +24,7 @@ func RequestLoggerWith(log *logrus.Logger) gin.HandlerFunc {
 
 		context.Next()
 
-		if path == "/ping" || path == "/ready" {
+		if path == "/ping" {
 			return
 		}
 

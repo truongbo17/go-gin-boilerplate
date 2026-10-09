@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -10,8 +11,7 @@ import (
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/services"
 	coreworker "github.com/truongbo17/go-gin-boilerplate/internal/app/core/worker"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/v1/auth"
-	graphqlmodule "github.com/truongbo17/go-gin-boilerplate/internal/app/v1/graphql"
-	"github.com/truongbo17/go-gin-boilerplate/internal/health"
+	"github.com/truongbo17/go-gin-boilerplate/internal/app/v1/graphql"
 	"github.com/truongbo17/go-gin-boilerplate/internal/middlewares"
 	"github.com/truongbo17/go-gin-boilerplate/internal/middlewares/limiter"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
@@ -22,7 +22,6 @@ type Options struct {
 	Config         config.Config
 	DB             *gorm.DB
 	TokenBlacklist services.TokenBlacklist
-	Readiness      health.Checker
 	Limiter        *limiter.Limiter
 	Logger         *logrus.Logger
 	Jobs           coreworker.Dispatcher
@@ -30,15 +29,28 @@ type Options struct {
 
 func New(options Options) (*gin.Engine, error) {
 	if options.DB == nil || options.TokenBlacklist == nil || options.Limiter == nil || options.Logger == nil {
-		return nil, fmt.Errorf("HTTP router dependencies are incomplete")
+		return nil, errors.New("HTTP router dependencies are incomplete")
 	}
-	authModule := auth.NewModule(auth.Dependencies{
+	authModule, err := auth.NewModule(auth.Dependencies{
 		DB:             options.DB,
 		TokenBlacklist: options.TokenBlacklist,
 		Auth:           options.Config.Auth,
 		Limiter:        options.Limiter,
 		Jobs:           options.Jobs,
 	})
+	if err != nil {
+		return nil, err
+	}
+	graphqlModule, err := graphql.NewModule(graphql.Dependencies{
+		DB:      options.DB,
+		Auth:    authModule.AuthMiddleware(),
+		Limiter: options.Limiter,
+		Env:     options.Config.App.Env,
+		Logger:  options.Logger,
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	router := gin.New()
 	var trustedProxies []string
@@ -56,12 +68,12 @@ func New(options Options) (*gin.Engine, error) {
 	}
 	router.Use(middlewares.SecurityHeaders(), middlewares.LimitRequestBody(), middlewares.RequestID(), middlewares.RequestLang(), middlewares.RequestLoggerWith(options.Logger), middlewares.CorsWith(options.Config.Cors.AllowOrigin))
 	router.Use(func(c *gin.Context) { c.Set("app_url", options.Config.App.Url); c.Next() })
-	LoadPublic(router, options.Readiness)
-	registerOpenAPI(router)
+	LoadPublic(router)
+	if options.Config.App.Env != config.ReleaseMode {
+		registerOpenAPI(router)
+	}
 	api := router.Group("/api")
 	authModule.RegisterRoutes(api)
-	graphqlmodule.NewModule(graphqlmodule.Dependencies{
-		DB: options.DB, Auth: authModule.AuthMiddleware(), Limiter: options.Limiter, Env: options.Config.App.Env, Logger: options.Logger,
-	}).RegisterRoutes(api)
+	graphqlModule.RegisterRoutes(api)
 	return router, nil
 }

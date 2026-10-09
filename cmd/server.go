@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/truongbo17/go-gin-boilerplate/config"
 	coreworker "github.com/truongbo17/go-gin-boilerplate/internal/app/core/worker"
-	"github.com/truongbo17/go-gin-boilerplate/internal/health"
 	"github.com/truongbo17/go-gin-boilerplate/internal/infra/worker/client"
 	"github.com/truongbo17/go-gin-boilerplate/internal/middlewares/limiter"
 	"github.com/truongbo17/go-gin-boilerplate/internal/routes"
@@ -47,14 +46,9 @@ func runServer(cmd *cobra.Command, r *runtime) error {
 		Config:         r.config,
 		DB:             r.db,
 		TokenBlacklist: r.cache,
-		Readiness: health.Checker{
-			DB:         r.db,
-			Redis:      r.redis,
-			CheckRedis: r.config.Cache.CacheStore == config.CacheStoreRedis,
-		},
-		Limiter: rateLimiter,
-		Logger:  r.log,
-		Jobs:    jobs,
+		Limiter:        rateLimiter,
+		Logger:         r.log,
+		Jobs:           jobs,
 	})
 	if err != nil {
 		return err

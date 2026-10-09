@@ -32,32 +32,41 @@ type Dependencies struct {
 type Module struct {
 	service coregraphql.Service
 	handler http.Handler
-	deps    Dependencies
+	auth    gin.HandlerFunc
+	limiter *appLimiter.Limiter
 }
 
-func NewModule(deps Dependencies) *Module {
-	service := coregraphql.Service{
-		Store:       graphrepository.MetadataRepository{DB: deps.DB},
-		Permissions: authrepository.NewPermissionRepository(deps.DB),
+func NewModule(params Dependencies) (*Module, error) {
+	if params.DB == nil || params.Auth == nil || params.Limiter == nil || params.Logger == nil {
+		return nil, errors.New("GraphQL module requires DB, auth middleware, limiter, and logger")
 	}
-	return &Module{service: service, handler: graphqlauth.NewHandler(deps.Env, service, deps.Logger), deps: deps}
+	service := coregraphql.Service{
+		Store:       graphrepository.MetadataRepository{DB: params.DB},
+		Permissions: authrepository.NewPermissionRepository(params.DB),
+	}
+	return &Module{
+		service: service,
+		handler: graphqlauth.NewHandler(params.Env, service, params.Logger),
+		auth:    params.Auth,
+		limiter: params.Limiter,
+	}, nil
 }
 
 func (module *Module) RegisterRoutes(api *gin.RouterGroup) {
 	public := api.Group("/v1/public")
 	public.GET("/enum-options/:key",
-		module.deps.Limiter.Limit("graphql:public-enum", limiter.Rate{Period: time.Minute, Limit: 100}),
+		module.limiter.Limit("graphql:public-enum", limiter.Rate{Period: time.Minute, Limit: 100}),
 		module.publicEnum,
 	)
 	graph := api.Group("/v1/graphql")
 	graph.POST("",
-		module.deps.Limiter.Limit("graphql:query", limiter.Rate{Period: time.Minute, Limit: 100}),
-		module.deps.Auth,
+		module.limiter.Limit("graphql:query", limiter.Rate{Period: time.Minute, Limit: 100}),
+		module.auth,
 		module.execute,
 	)
 	graph.GET("/entity-options",
-		module.deps.Limiter.Limit("graphql:entity-options", limiter.Rate{Period: time.Minute, Limit: 100}),
-		module.deps.Auth,
+		module.limiter.Limit("graphql:entity-options", limiter.Rate{Period: time.Minute, Limit: 100}),
+		module.auth,
 		module.entityOptions,
 	)
 }

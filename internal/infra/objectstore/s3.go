@@ -42,7 +42,7 @@ func OpenS3(ctx context.Context, opts S3Options) (*s3.Client, error) {
 }
 
 // CheckBucket verifies access to one required bucket. HeadBucket requires the
-// relevant bucket permission; use it for readiness only if access is required.
+// relevant bucket permission.
 func CheckBucket(ctx context.Context, client *s3.Client, bucket string) error {
 	if client == nil || bucket == "" {
 		return errors.New("S3 client and bucket are required")

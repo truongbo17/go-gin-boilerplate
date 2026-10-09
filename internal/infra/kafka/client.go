@@ -60,7 +60,7 @@ func (opts Options) security() (*tls.Config, sasl.Mechanism, error) {
 	}
 }
 
-// Ping checks one broker at startup or during an explicit readiness probe.
+// Ping checks connectivity to one configured broker.
 func Ping(ctx context.Context, opts Options) error {
 	tlsConfig, mechanism, err := opts.security()
 	if err != nil {
