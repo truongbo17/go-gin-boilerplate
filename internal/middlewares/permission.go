@@ -14,7 +14,12 @@ func CheckPermission(permission string, permissionService services.PermissionSer
 
 		ctx := c.Request.Context()
 		hasPermission, err := permissionService.CheckPermission(ctx, user.ID, permission)
-		if err != nil || !hasPermission {
+		if err != nil {
+			_ = c.Error(err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		if !hasPermission {
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}

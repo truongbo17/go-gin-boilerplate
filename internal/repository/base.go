@@ -202,7 +202,7 @@ func (r *BaseRepository[T]) DeleteByCondition(ctx context.Context, condition any
 }
 
 func (r *BaseRepository[T]) UpdateByCondition(ctx context.Context, condition any, updates any, args ...any) error {
-	var entity *T
+	var entity T
 
 	result := r.DB.WithContext(ctx).Model(&entity).Where(condition, args...).Updates(updates)
 

@@ -95,7 +95,7 @@ func (service Service) EntityOptions(ctx context.Context, userID uint, key, keyw
 	if !allowed {
 		return EntityPage{}, ErrForbidden
 	}
-	if page < 1 || perPage < 1 || perPage > 100 {
+	if page < 1 || page > 10000 || perPage < 1 || perPage > 100 {
 		return EntityPage{}, ErrInvalidInput
 	}
 	if len(keyword) > 100 {

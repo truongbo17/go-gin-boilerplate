@@ -96,6 +96,9 @@ func plainEmail(lang string, input any) error {
 
 func strongPassword(lang string, input any) error {
 	password := input.(string)
+	if err := bcryptPasswordLength(lang, password); err != nil {
+		return err
+	}
 	var upper, lower, digit bool
 	for _, r := range password {
 		upper = upper || unicode.IsUpper(r)
@@ -114,6 +117,13 @@ func strongPassword(lang string, input any) error {
 		if !check.ok {
 			return errors.New(i18n.GetMessage(lang, check.key, nil))
 		}
+	}
+	return nil
+}
+
+func bcryptPasswordLength(lang string, input any) error {
+	if len(input.(string)) > 72 {
+		return errors.New(i18n.GetMessage(lang, "validation.password_max_bytes", nil))
 	}
 	return nil
 }

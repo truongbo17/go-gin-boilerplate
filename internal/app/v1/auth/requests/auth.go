@@ -11,6 +11,13 @@ import (
 	"regexp"
 )
 
+var (
+	uppercasePasswordPattern = regexp.MustCompile(`[A-Z]`)
+	lowercasePasswordPattern = regexp.MustCompile(`[a-z]`)
+	digitPasswordPattern     = regexp.MustCompile(`\d`)
+	specialPasswordPattern   = regexp.MustCompile(`[!@#$%^&*(),.?":{}|<>]`)
+)
+
 type LoginRequest struct {
 	Username string `json:"username" form:"username"`
 	Password string `json:"password" form:"password"`
@@ -59,10 +66,11 @@ func (a ChangePasswordRequest) Validate(lang string) error {
 		validation.Field(&a.NewPassword,
 			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
 			validation.Length(8, 64).Error(i18n.GetMessage(lang, "validation.length", map[string]string{"min": "8", "max": "64"})),
-			validation.Match(regexp.MustCompile(`[A-Z]`)).Error(i18n.GetMessage(lang, "validation.password_uppercase", nil)),
-			validation.Match(regexp.MustCompile(`[a-z]`)).Error(i18n.GetMessage(lang, "validation.password_lowercase", nil)),
-			validation.Match(regexp.MustCompile(`\d`)).Error(i18n.GetMessage(lang, "validation.password_digit", nil)),
-			validation.Match(regexp.MustCompile(`[!@#$%^&*(),.?":{}|<>]`)).Error(i18n.GetMessage(lang, "validation.password_special", nil)),
+			validation.By(func(value any) error { return bcryptPasswordLength(lang, value) }),
+			validation.Match(uppercasePasswordPattern).Error(i18n.GetMessage(lang, "validation.password_uppercase", nil)),
+			validation.Match(lowercasePasswordPattern).Error(i18n.GetMessage(lang, "validation.password_lowercase", nil)),
+			validation.Match(digitPasswordPattern).Error(i18n.GetMessage(lang, "validation.password_digit", nil)),
+			validation.Match(specialPasswordPattern).Error(i18n.GetMessage(lang, "validation.password_special", nil)),
 		),
 		validation.Field(&a.ConfirmPassword,
 			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
