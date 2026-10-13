@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hibiken/asynq"
 	"github.com/spf13/cobra"
 	"github.com/truongbo17/go-gin-boilerplate/config"
 	coreworker "github.com/truongbo17/go-gin-boilerplate/internal/app/core/worker"
@@ -41,7 +42,9 @@ func runServer(cmd *cobra.Command, r *runtime) error {
 	var jobs coreworker.Dispatcher
 	if r.config.Mail.Enabled {
 		queue := client.New(r.config.Cache)
-		defer queue.Close()
+		defer func(queue *asynq.Client) {
+			_ = queue.Close()
+		}(queue)
 		jobs = coreworker.New(queue)
 	}
 	router, err := routes.New(
