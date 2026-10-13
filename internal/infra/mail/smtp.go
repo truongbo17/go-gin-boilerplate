@@ -44,12 +44,20 @@ func (sender Sender) Send(ctx context.Context, to, subject, body string) error {
 	}
 	defer client.Close()
 	if sender.Config.TLSMode == "starttls" {
-		if err := client.StartTLS(&tls.Config{ServerName: sender.Config.Host, MinVersion: tls.VersionTLS12}); err != nil {
+		if err := client.StartTLS(
+			&tls.Config{
+				ServerName: sender.Config.Host, MinVersion: tls.VersionTLS12,
+			},
+		); err != nil {
 			return fmt.Errorf("SMTP STARTTLS: %w", err)
 		}
 	}
 	if sender.Config.Username != "" {
-		if err := client.Auth(smtp.PlainAuth("", sender.Config.Username, sender.Config.Password, sender.Config.Host)); err != nil {
+		if err := client.Auth(
+			smtp.PlainAuth(
+				"", sender.Config.Username, sender.Config.Password, sender.Config.Host,
+			),
+		); err != nil {
 			return fmt.Errorf("authenticate SMTP: %w", err)
 		}
 	}
@@ -63,7 +71,9 @@ func (sender Sender) Send(ctx context.Context, to, subject, body string) error {
 	if err != nil {
 		return err
 	}
-	message := "From: " + sender.Config.From + "\r\nTo: " + to + "\r\nSubject: " + subject + "\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n" + strings.ReplaceAll(body, "\n", "\r\n")
+	message := "From: " + sender.Config.From + "\r\nTo: " + to + "\r\nSubject: " + subject + "\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n" + strings.ReplaceAll(
+		body, "\n", "\r\n",
+	)
 	if _, err := io.WriteString(writer, message); err != nil {
 		return err
 	}

@@ -44,11 +44,13 @@ func (c *UserController) ListUsers(ctx *gin.Context) {
 	var listRequest, _ = ctx.Get("ListUserRequest")
 	requestBody, _ := listRequest.(requests.ListUserRequest)
 
-	users, err := c.UserService.ListUsers(ctxHandler, types.ListUsersInput{
-		Search:  requestBody.Search,
-		Page:    requestBody.Page,
-		PerPage: requestBody.PerPage,
-	})
+	users, err := c.UserService.ListUsers(
+		ctxHandler, types.ListUsersInput{
+			Search:  requestBody.Search,
+			Page:    requestBody.Page,
+			PerPage: requestBody.PerPage,
+		},
+	)
 	if err != nil {
 		responses.ReturnError(ctx, err)
 		return
@@ -56,14 +58,16 @@ func (c *UserController) ListUsers(ctx *gin.Context) {
 
 	var userResponses []responses.UserResponse
 	for _, user := range users.Items {
-		userResponses = append(userResponses, responses.UserResponse{
-			ID:        user.ID,
-			Username:  user.Username,
-			Email:     user.Email,
-			Status:    user.Status,
-			CreatedAt: user.CreatedAt,
-			UpdatedAt: user.UpdatedAt,
-		})
+		userResponses = append(
+			userResponses, responses.UserResponse{
+				ID:        user.ID,
+				Username:  user.Username,
+				Email:     user.Email,
+				Status:    user.Status,
+				CreatedAt: user.CreatedAt,
+				UpdatedAt: user.UpdatedAt,
+			},
+		)
 	}
 
 	response.ReturnSuccess(ctx, userResponses, response.PageMeta(ctx, *users))
@@ -97,19 +101,23 @@ func (c *UserController) GetUserRoles(ctx *gin.Context) {
 
 	var roleResponses []responses.RoleResponse
 	for _, role := range roles {
-		roleResponses = append(roleResponses, responses.RoleResponse{
-			ID:          role.ID,
-			Name:        role.Name,
-			Slug:        role.Slug,
-			Description: role.Description,
-			CreatedAt:   role.CreatedAt,
-			UpdatedAt:   role.UpdatedAt,
-		})
+		roleResponses = append(
+			roleResponses, responses.RoleResponse{
+				ID:          role.ID,
+				Name:        role.Name,
+				Slug:        role.Slug,
+				Description: role.Description,
+				CreatedAt:   role.CreatedAt,
+				UpdatedAt:   role.UpdatedAt,
+			},
+		)
 	}
 
-	response.ReturnSuccess(ctx, responses.UserRolesResponse{
-		Roles: roleResponses,
-	}, nil)
+	response.ReturnSuccess(
+		ctx, responses.UserRolesResponse{
+			Roles: roleResponses,
+		}, nil,
+	)
 }
 
 // AssignRoleToUser godoc
@@ -136,11 +144,13 @@ func (c *UserController) AssignRoleToUser(ctx *gin.Context) {
 	var assignRequest, _ = ctx.Get("AssignRoleToUserRequest")
 	requestBody, _ := assignRequest.(requests.AssignRoleToUserRequest)
 
-	err := c.UserService.AssignRoleToUser(ctxHandler, types.AssignRoleToUserInput{
-		UserID:  id,
-		ActorID: ctx.MustGet("user").(*models.User).ID,
-		RoleIDs: requestBody.RoleIDs,
-	})
+	err := c.UserService.AssignRoleToUser(
+		ctxHandler, types.AssignRoleToUserInput{
+			UserID:  id,
+			ActorID: ctx.MustGet("user").(*models.User).ID,
+			RoleIDs: requestBody.RoleIDs,
+		},
+	)
 	if err != nil {
 		responses.ReturnError(ctx, err)
 		return

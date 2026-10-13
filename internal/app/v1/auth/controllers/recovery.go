@@ -10,11 +10,13 @@ import (
 
 func (c *AuthController) Register(ctx *gin.Context) {
 	requestBody := ctx.MustGet("RegisterRequest").(requests.RegisterRequest)
-	result, failure := c.AuthService.Register(ctx.Request.Context(), types.RegisterInput{
-		Username: requestBody.Username,
-		Email:    requestBody.Email,
-		Password: requestBody.Password,
-	})
+	result, failure := c.AuthService.Register(
+		ctx.Request.Context(), types.RegisterInput{
+			Username: requestBody.Username,
+			Email:    requestBody.Email,
+			Password: requestBody.Password,
+		},
+	)
 	if failure != nil {
 		responses.ReturnError(ctx, failure)
 		return
@@ -22,10 +24,12 @@ func (c *AuthController) Register(ctx *gin.Context) {
 	if result.NotificationErr != nil {
 		_ = ctx.Error(result.NotificationErr)
 	}
-	response.ReturnSuccess(ctx, responses.RegisterResponse{
-		ID:          result.User.ID,
-		EmailQueued: result.NotificationQueued,
-	}, nil)
+	response.ReturnSuccess(
+		ctx, responses.RegisterResponse{
+			ID:          result.User.ID,
+			EmailQueued: result.NotificationQueued,
+		}, nil,
+	)
 }
 
 func (c *AuthController) ForgotPassword(ctx *gin.Context) {
@@ -39,10 +43,12 @@ func (c *AuthController) ForgotPassword(ctx *gin.Context) {
 
 func (c *AuthController) ResetPassword(ctx *gin.Context) {
 	requestBody := ctx.MustGet("ResetPasswordRequest").(requests.ResetPasswordRequest)
-	failure := c.AuthService.ResetPassword(ctx.Request.Context(), types.ResetPasswordInput{
-		Token:    requestBody.Token,
-		Password: requestBody.NewPassword,
-	})
+	failure := c.AuthService.ResetPassword(
+		ctx.Request.Context(), types.ResetPasswordInput{
+			Token:    requestBody.Token,
+			Password: requestBody.NewPassword,
+		},
+	)
 	if failure != nil {
 		responses.ReturnError(ctx, failure)
 		return

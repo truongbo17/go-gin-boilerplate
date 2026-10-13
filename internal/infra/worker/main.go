@@ -15,7 +15,9 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 )
 
-func StartWith(configRedis config.Cache, log *logrus.Logger, handlers map[string]asynq.HandlerFunc) (*asynq.Server, error) {
+func StartWith(configRedis config.Cache, log *logrus.Logger, handlers map[string]asynq.HandlerFunc) (
+	*asynq.Server, error,
+) {
 	srv := asynq.NewServer(
 		asynq.RedisClientOpt{
 			Addr:     fmt.Sprintf("%s:%s", configRedis.RedisHost, configRedis.RedisPort),
@@ -32,8 +34,14 @@ func StartWith(configRedis config.Cache, log *logrus.Logger, handlers map[string
 			},
 			RetryDelayFunc: retryDelay,
 			Logger:         log,
-			ErrorHandler:   asynq.ErrorHandlerFunc(func(ctx context.Context, task *asynq.Task, err error) { errorHandler(log, ctx, task, err) }),
-			IsFailure:      func(err error) bool { return !isRateLimitError(err) },
+			ErrorHandler: asynq.ErrorHandlerFunc(
+				func(
+					ctx context.Context, task *asynq.Task, err error,
+				) {
+					errorHandler(log, ctx, task, err)
+				},
+			),
+			IsFailure: func(err error) bool { return !isRateLimitError(err) },
 		},
 	)
 
@@ -66,35 +74,37 @@ func retryDelay(n int, err error, _ *asynq.Task) time.Duration {
 }
 
 func workerTracingMiddleware(next asynq.Handler) asynq.Handler {
-	return asynq.HandlerFunc(func(ctx context.Context, task *asynq.Task) error {
-		var payload map[string]any
-		if err := json.Unmarshal(task.Payload(), &payload); err == nil {
-			if traceMap, ok := payload["tracer"].(map[string]any); ok {
-				carrier := propagation.MapCarrier{}
-				for k, v := range traceMap {
-					if strVal, ok := v.(string); ok {
-						carrier[k] = strVal
+	return asynq.HandlerFunc(
+		func(ctx context.Context, task *asynq.Task) error {
+			var payload map[string]any
+			if err := json.Unmarshal(task.Payload(), &payload); err == nil {
+				if traceMap, ok := payload["tracer"].(map[string]any); ok {
+					carrier := propagation.MapCarrier{}
+					for k, v := range traceMap {
+						if strVal, ok := v.(string); ok {
+							carrier[k] = strVal
+						}
 					}
+					ctx = otel.GetTextMapPropagator().Extract(ctx, carrier)
 				}
-				ctx = otel.GetTextMapPropagator().Extract(ctx, carrier)
 			}
-		}
 
-		tracer := otel.Tracer("AsynqWorker")
-		ctx, span := tracer.Start(ctx, "Asynq/ProcessTask")
-		defer span.End()
+			tracer := otel.Tracer("AsynqWorker")
+			ctx, span := tracer.Start(ctx, "Asynq/ProcessTask")
+			defer span.End()
 
-		span.SetAttributes(
-			attribute.String("task.id", task.ResultWriter().TaskID()),
-			attribute.String("task.type", task.Type()),
-		)
+			span.SetAttributes(
+				attribute.String("task.id", task.ResultWriter().TaskID()),
+				attribute.String("task.type", task.Type()),
+			)
 
-		err := next.ProcessTask(ctx, task)
-		if err != nil {
-			span.RecordError(err)
-		}
-		return err
-	})
+			err := next.ProcessTask(ctx, task)
+			if err != nil {
+				span.RecordError(err)
+			}
+			return err
+		},
+	)
 }
 
 type RateLimitError struct {

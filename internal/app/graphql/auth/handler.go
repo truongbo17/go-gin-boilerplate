@@ -44,9 +44,11 @@ func NewHandler(env string, metadata coregraphql.Service, log *logrus.Logger) ht
 	if env != config.ReleaseMode {
 		srv.Use(extension.Introspection{})
 	}
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
-		defer cancel()
-		srv.ServeHTTP(w, r.WithContext(ctx))
-	})
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+			defer cancel()
+			srv.ServeHTTP(w, r.WithContext(ctx))
+		},
+	)
 }

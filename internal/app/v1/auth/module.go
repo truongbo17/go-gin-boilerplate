@@ -46,11 +46,13 @@ func NewModule(params Dependencies) (*Module, error) {
 	roleRepository := authrepository.NewRoleRepository(params.DB)
 	permissionRepository := authrepository.NewPermissionRepository(params.DB)
 
-	authService := services.NewAuthService(userRepository, params.TokenBlacklist, services.AuthSettings{
-		JWTSecretKey:               params.Auth.JWTSecretKey,
-		JWTAccessExpirationMinutes: params.Auth.JWTAccessExpirationMinutes,
-		JWTRefreshExpirationDays:   params.Auth.JWTRefreshExpirationDays,
-	})
+	authService := services.NewAuthService(
+		userRepository, params.TokenBlacklist, services.AuthSettings{
+			JWTSecretKey:               params.Auth.JWTSecretKey,
+			JWTAccessExpirationMinutes: params.Auth.JWTAccessExpirationMinutes,
+			JWTRefreshExpirationDays:   params.Auth.JWTRefreshExpirationDays,
+		},
+	)
 	authService.Jobs = params.Jobs
 	userService := services.NewUserService(userRepository)
 	roleService := services.NewRoleService(roleRepository)

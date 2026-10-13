@@ -43,8 +43,12 @@ func (us *UserService) CreateUser(ctx context.Context, input types.ProvisionUser
 	return us.UserRepository.CreateWithAdminRole(ctx, user, input.Admin)
 }
 
-func (us *UserService) ListUsers(ctx context.Context, input types.ListUsersInput) (*page.Result[models.User], *core.ErrorReturn) {
-	users, err := us.UserRepository.ListPage(ctx, page.Query{Number: input.Page, Size: input.PerPage, Search: input.Search})
+func (us *UserService) ListUsers(ctx context.Context, input types.ListUsersInput) (
+	*page.Result[models.User], *core.ErrorReturn,
+) {
+	users, err := us.UserRepository.ListPage(
+		ctx, page.Query{Number: input.Page, Size: input.PerPage, Search: input.Search},
+	)
 	if err != nil {
 		return nil, &core.ErrorReturn{
 			ErrorCode: authcore.ErrUserListInternalError,

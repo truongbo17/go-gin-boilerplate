@@ -3,6 +3,8 @@ package tracer
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/truongbo17/go-gin-boilerplate/config"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -11,7 +13,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/semconv/v1.30.0"
-	"time"
 )
 
 func Start(configTracer config.Tracer) (*trace.TracerProvider, error) {
@@ -21,11 +22,14 @@ func Start(configTracer config.Tracer) (*trace.TracerProvider, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	exporter, err := otlptracehttp.New(ctx,
+	exporter, err := otlptracehttp.New(
+		ctx,
 		otlptracehttp.WithEndpoint(configTracer.Url),
-		otlptracehttp.WithHeaders(map[string]string{
-			"Authorization": "Bearer " + configTracer.SecretKey,
-		}),
+		otlptracehttp.WithHeaders(
+			map[string]string{
+				"Authorization": "Bearer " + configTracer.SecretKey,
+			},
+		),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create trace exporter: %w", err)
@@ -46,7 +50,11 @@ func Start(configTracer config.Tracer) (*trace.TracerProvider, error) {
 	)
 
 	otel.SetTracerProvider(tp)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	otel.SetTextMapPropagator(
+		propagation.NewCompositeTextMapPropagator(
+			propagation.TraceContext{}, propagation.Baggage{},
+		),
+	)
 
 	return tp, nil
 }

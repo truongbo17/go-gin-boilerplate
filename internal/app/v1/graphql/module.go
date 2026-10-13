@@ -54,17 +54,20 @@ func NewModule(params Dependencies) (*Module, error) {
 
 func (module *Module) RegisterRoutes(api *gin.RouterGroup) {
 	public := api.Group("/v1/public")
-	public.GET("/enum-options/:key",
+	public.GET(
+		"/enum-options/:key",
 		module.limiter.Limit("graphql:public-enum", limiter.Rate{Period: time.Minute, Limit: 100}),
 		module.publicEnum,
 	)
 	graph := api.Group("/v1/graphql")
-	graph.POST("",
+	graph.POST(
+		"",
 		module.limiter.Limit("graphql:query", limiter.Rate{Period: time.Minute, Limit: 100}),
 		module.auth,
 		module.execute,
 	)
-	graph.GET("/entity-options",
+	graph.GET(
+		"/entity-options",
 		module.limiter.Limit("graphql:entity-options", limiter.Rate{Period: time.Minute, Limit: 100}),
 		module.auth,
 		module.entityOptions,
@@ -120,7 +123,9 @@ func (module *Module) entityOptions(c *gin.Context) {
 		}
 	}
 	user := c.MustGet("user").(*models.User)
-	result, err := module.service.EntityOptions(c.Request.Context(), user.ID, c.Query("key"), c.Query("keyword"), page, perPage)
+	result, err := module.service.EntityOptions(
+		c.Request.Context(), user.ID, c.Query("key"), c.Query("keyword"), page, perPage,
+	)
 	if err != nil {
 		switch {
 		case errors.Is(err, coregraphql.ErrForbidden):

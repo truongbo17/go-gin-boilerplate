@@ -54,7 +54,9 @@ func (r *queryResolver) EnumOptions(ctx context.Context, key string) (*model.Enu
 }
 
 // EntityOptions is the resolver for the entity_options field.
-func (r *queryResolver) EntityOptions(ctx context.Context, key string, keyword *string, page *int, perPage *int) (*model.EntityPage, error) {
+func (r *queryResolver) EntityOptions(
+	ctx context.Context, key string, keyword *string, page *int, perPage *int,
+) (*model.EntityPage, error) {
 	user, ok := ctx.Value(userKey{}).(*models.User)
 	if !ok || user == nil {
 		return nil, errors.New("authentication required")
@@ -72,7 +74,9 @@ func (r *queryResolver) EntityOptions(ctx context.Context, key string, keyword *
 	result, err := r.Metadata.EntityOptions(ctx, user.ID, key, search, number, size)
 	if err != nil {
 		switch {
-		case errors.Is(err, coregraphql.ErrForbidden), errors.Is(err, coregraphql.ErrUnsupportedKey), errors.Is(err, coregraphql.ErrInvalidInput):
+		case errors.Is(err, coregraphql.ErrForbidden), errors.Is(err, coregraphql.ErrUnsupportedKey), errors.Is(
+			err, coregraphql.ErrInvalidInput,
+		):
 			return nil, err
 		default:
 			if r.Logger != nil {
@@ -83,9 +87,18 @@ func (r *queryResolver) EntityOptions(ctx context.Context, key string, keyword *
 	}
 	options := make([]*model.EntityOption, 0, len(result.Options))
 	for _, option := range result.Options {
-		options = append(options, &model.EntityOption{ID: option.ID, Code: option.Code, Name: option.Name, Label: option.Label, Extra: option.Extra})
+		options = append(
+			options, &model.EntityOption{
+				ID: option.ID, Code: option.Code, Name: option.Name, Label: option.Label, Extra: option.Extra,
+			},
+		)
 	}
-	return &model.EntityPage{Key: result.Key, Options: options, Meta: &model.PageMeta{Page: result.Meta.Page, PerPage: result.Meta.PerPage, LastPage: result.Meta.LastPage, Total: result.Meta.Total}}, nil
+	return &model.EntityPage{
+		Key: result.Key, Options: options, Meta: &model.PageMeta{
+			Page: result.Meta.Page, PerPage: result.Meta.PerPage, LastPage: result.Meta.LastPage,
+			Total: result.Meta.Total,
+		},
+	}, nil
 }
 
 // Query returns generated.QueryResolver implementation.

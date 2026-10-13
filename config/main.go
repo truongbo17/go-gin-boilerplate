@@ -33,7 +33,8 @@ func (config *Config) validate() error {
 	if err := config.validateDatabase(); err != nil {
 		return err
 	}
-	err := validation.ValidateStruct(config,
+	err := validation.ValidateStruct(
+		config,
 		// App
 		validation.Field(&config.App.Port, is.Port),
 
@@ -53,7 +54,8 @@ func (config *Config) validate() error {
 		return err
 	}
 	if config.Cache.CacheStore == CacheStoreRedis {
-		if err := validation.ValidateStruct(config,
+		if err := validation.ValidateStruct(
+			config,
 			validation.Field(&config.Cache.RedisHost, validation.Required, is.Host),
 			validation.Field(&config.Cache.RedisPort, validation.Required, is.Port),
 		); err != nil {
@@ -64,7 +66,8 @@ func (config *Config) validate() error {
 }
 
 func (config *Config) validateWorker() error {
-	if err := validation.ValidateStruct(config,
+	if err := validation.ValidateStruct(
+		config,
 		validation.Field(&config.App.Env, validation.In(DebugMode, ReleaseMode, LocalMode)),
 		validation.Field(&config.Cache.CacheStore, validation.In(CacheStoreRedis)),
 		validation.Field(&config.Cache.RedisHost, validation.Required, is.Host),
@@ -77,7 +80,9 @@ func (config *Config) validateWorker() error {
 		if err := config.validateDatabase(); err != nil {
 			return err
 		}
-		if err := validation.Validate(config.Auth.JWTSecretKey, validation.Required, validation.Length(32, 0)); err != nil {
+		if err := validation.Validate(
+			config.Auth.JWTSecretKey, validation.Required, validation.Length(32, 0),
+		); err != nil {
 			return err
 		}
 	}
@@ -85,14 +90,17 @@ func (config *Config) validateWorker() error {
 }
 
 func (config *Config) validateDatabase() error {
-	return validation.ValidateStruct(config,
+	return validation.ValidateStruct(
+		config,
 		validation.Field(&config.App.Env, validation.In(DebugMode, ReleaseMode, LocalMode)),
 		validation.Field(&config.Database.Master.Port, validation.Required, is.Port),
 		validation.Field(&config.Database.Master.Host, validation.Required, is.Host),
 		validation.Field(&config.Database.Master.Username, validation.Required),
 		validation.Field(&config.Database.Master.Database, validation.Required),
 		validation.Field(&config.Database.Master.MaxOpenConns, validation.Required, validation.Min(1)),
-		validation.Field(&config.Database.Master.MaxIdleConns, validation.Min(0), validation.Max(config.Database.Master.MaxOpenConns)),
+		validation.Field(
+			&config.Database.Master.MaxIdleConns, validation.Min(0), validation.Max(config.Database.Master.MaxOpenConns),
+		),
 		validation.Field(&config.Database.Master.ConnMaxLifetimeMinutes, validation.Min(0)),
 		validation.Field(&config.Database.Master.ConnMaxIdleTimeMinutes, validation.Min(0)),
 	)
@@ -126,7 +134,8 @@ func load(validate func(*Config) error) (*Config, error) {
 	for _, key := range []string{
 		"APP_NAME", "APP_URL", "DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_DATABASE",
 		"REDIS_HOST", "REDIS_PORT", "REDIS_USERNAME", "REDIS_PASSWORD", "JWT_SECRET",
-		"MAIL_ENABLED", "MAIL_HOST", "MAIL_PORT", "MAIL_USERNAME", "MAIL_PASSWORD", "MAIL_FROM", "MAIL_TLS_MODE", "PASSWORD_RESET_URL",
+		"MAIL_ENABLED", "MAIL_HOST", "MAIL_PORT", "MAIL_USERNAME", "MAIL_PASSWORD", "MAIL_FROM", "MAIL_TLS_MODE",
+		"PASSWORD_RESET_URL",
 		"ELASTIC_APM_SERVER_URL", "ELASTIC_APM_SECRET_TOKEN", "ELASTIC_APM_SERVICE_NAME",
 		"ELASTIC_APM_GLOBAL_LABELS",
 	} {

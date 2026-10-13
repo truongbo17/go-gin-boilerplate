@@ -71,10 +71,16 @@ func main() {
 		return float64(latencies[i]) / 1000
 	}
 	total := len(latencies)
-	fmt.Printf("url=%s concurrency=%d elapsed=%.3fs total=%d rps=%.1f p50=%.1fus p95=%.1fus p99=%.1fus max=%.1fus statuses=%v errors=%d body_bytes=%d\n", url, *concurrency, elapsed.Seconds(), total, float64(total)/elapsed.Seconds(), percentile(.5), percentile(.95), percentile(.99), percentile(1), statuses, failures, bytes)
+	fmt.Printf(
+		"url=%s concurrency=%d elapsed=%.3fs total=%d rps=%.1f p50=%.1fus p95=%.1fus p99=%.1fus max=%.1fus statuses=%v errors=%d body_bytes=%d\n",
+		url, *concurrency, elapsed.Seconds(), total, float64(total)/elapsed.Seconds(), percentile(.5), percentile(.95),
+		percentile(.99), percentile(1), statuses, failures, bytes,
+	)
 }
 
-func run(client *http.Client, url string, concurrency int, duration time.Duration, record bool) ([]workerResult, time.Duration) {
+func run(client *http.Client, url string, concurrency int, duration time.Duration, record bool) (
+	[]workerResult, time.Duration,
+) {
 	results := make([]workerResult, concurrency)
 	var wg sync.WaitGroup
 	start := make(chan struct{})

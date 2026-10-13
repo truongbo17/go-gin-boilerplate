@@ -14,12 +14,14 @@ import (
 func New(cfg config.Config, db *gorm.DB, redis *redisclient.Client) (register.Registry, error) {
 	var modules []register.Module
 	if cfg.Mail.Enabled {
-		handler, err := authworker.NewHandler(authworker.Dependencies{
-			DB:           db,
-			Redis:        redis,
-			Mail:         cfg.Mail,
-			JWTSecretKey: cfg.Auth.JWTSecretKey,
-		})
+		handler, err := authworker.NewHandler(
+			authworker.Dependencies{
+				DB:           db,
+				Redis:        redis,
+				Mail:         cfg.Mail,
+				JWTSecretKey: cfg.Auth.JWTSecretKey,
+			},
+		)
 		if err != nil {
 			return register.Registry{}, fmt.Errorf("build auth mail worker: %w", err)
 		}

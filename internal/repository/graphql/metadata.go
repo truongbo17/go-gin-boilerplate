@@ -16,7 +16,9 @@ type row struct {
 	Name string
 }
 
-func (repo MetadataRepository) ListOptions(ctx context.Context, key, keyword string, page, perPage int) ([]core.EntityOption, int64, error) {
+func (repo MetadataRepository) ListOptions(
+	ctx context.Context, key, keyword string, page, perPage int,
+) ([]core.EntityOption, int64, error) {
 	var table, codeColumn, nameColumn string
 	switch key {
 	case "users":
@@ -38,12 +40,18 @@ func (repo MetadataRepository) ListOptions(ctx context.Context, key, keyword str
 		return nil, 0, err
 	}
 	var rows []row
-	if err := query.Select("id", codeColumn+" AS code", nameColumn+" AS name").Order("id ASC").Limit(perPage).Offset((page - 1) * perPage).Scan(&rows).Error; err != nil {
+	if err := query.Select(
+		"id", codeColumn+" AS code", nameColumn+" AS name",
+	).Order("id ASC").Limit(perPage).Offset((page - 1) * perPage).Scan(&rows).Error; err != nil {
 		return nil, 0, err
 	}
 	options := make([]core.EntityOption, 0, len(rows))
 	for _, item := range rows {
-		options = append(options, core.EntityOption{ID: strconv.FormatUint(uint64(item.ID), 10), Code: item.Code, Name: item.Name, Label: item.Name})
+		options = append(
+			options, core.EntityOption{
+				ID: strconv.FormatUint(uint64(item.ID), 10), Code: item.Code, Name: item.Name, Label: item.Name,
+			},
+		)
 	}
 	return options, total, nil
 }

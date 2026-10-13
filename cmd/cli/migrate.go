@@ -12,13 +12,15 @@ func NewMigrate(withDatabase WithDatabase) *cobra.Command {
 		Short:   "Run database migrations",
 		Example: "ggb migrate",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return withDatabase(cmd, func(db *gorm.DB) error {
-				if err := migrations.Run(db); err != nil {
-					return err
-				}
-				cmd.Println("Migration successful")
-				return nil
-			})
+			return withDatabase(
+				cmd, func(db *gorm.DB) error {
+					if err := migrations.Run(db); err != nil {
+						return err
+					}
+					cmd.Println("Migration successful")
+					return nil
+				},
+			)
 		},
 	}
 }

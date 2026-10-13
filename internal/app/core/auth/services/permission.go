@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core"
 	authcore "github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/models"
@@ -32,8 +33,12 @@ func (ps *PermissionService) CheckPermission(ctx context.Context, userID uint, p
 	return ps.PermissionRepository.CheckPermission(ctx, userID, permissionSlug)
 }
 
-func (ps *PermissionService) ListPermissions(ctx context.Context, input types.ListPermissionsInput) (*page.Result[models.Permission], *core.ErrorReturn) {
-	permissions, err := ps.PermissionRepository.ListPage(ctx, page.Query{Number: input.Page, Size: input.PerPage, Search: input.Search})
+func (ps *PermissionService) ListPermissions(
+	ctx context.Context, input types.ListPermissionsInput,
+) (*page.Result[models.Permission], *core.ErrorReturn) {
+	permissions, err := ps.PermissionRepository.ListPage(
+		ctx, page.Query{Number: input.Page, Size: input.PerPage, Search: input.Search},
+	)
 	if err != nil {
 		return nil, &core.ErrorReturn{
 			ErrorCode: authcore.ErrPermissionInternalError,
@@ -44,7 +49,9 @@ func (ps *PermissionService) ListPermissions(ctx context.Context, input types.Li
 	return permissions, nil
 }
 
-func (ps *PermissionService) CreatePermission(ctx context.Context, input types.CreatePermissionInput) (*models.Permission, *core.ErrorReturn) {
+func (ps *PermissionService) CreatePermission(
+	ctx context.Context, input types.CreatePermissionInput,
+) (*models.Permission, *core.ErrorReturn) {
 	permission := &models.Permission{
 		Name:        input.Name,
 		Slug:        input.Slug,
@@ -62,7 +69,9 @@ func (ps *PermissionService) CreatePermission(ctx context.Context, input types.C
 	return permission, nil
 }
 
-func (ps *PermissionService) UpdatePermission(ctx context.Context, input types.UpdatePermissionInput) (*models.Permission, *core.ErrorReturn) {
+func (ps *PermissionService) UpdatePermission(
+	ctx context.Context, input types.UpdatePermissionInput,
+) (*models.Permission, *core.ErrorReturn) {
 	permission, err := ps.PermissionRepository.FindByID(ctx, input.ID)
 	if err != nil {
 		return nil, &core.ErrorReturn{
@@ -87,7 +96,9 @@ func (ps *PermissionService) UpdatePermission(ctx context.Context, input types.U
 	return permission, nil
 }
 
-func (ps *PermissionService) DeletePermission(ctx context.Context, input types.DeletePermissionInput) *core.ErrorReturn {
+func (ps *PermissionService) DeletePermission(
+	ctx context.Context, input types.DeletePermissionInput,
+) *core.ErrorReturn {
 	err := ps.PermissionRepository.Delete(ctx, input.ID)
 	if err != nil {
 		return &core.ErrorReturn{
@@ -99,7 +110,9 @@ func (ps *PermissionService) DeletePermission(ctx context.Context, input types.D
 	return nil
 }
 
-func (ps *PermissionService) GetRolePermissions(ctx context.Context, roleID uint) ([]models.Permission, *core.ErrorReturn) {
+func (ps *PermissionService) GetRolePermissions(ctx context.Context, roleID uint) (
+	[]models.Permission, *core.ErrorReturn,
+) {
 	permissions, err := ps.PermissionRepository.GetRolePermissions(ctx, roleID)
 	if err != nil {
 		return nil, &core.ErrorReturn{
@@ -113,7 +126,9 @@ func (ps *PermissionService) GetRolePermissions(ctx context.Context, roleID uint
 	return permissions, nil
 }
 
-func (ps *PermissionService) AssignPermissionToRole(ctx context.Context, input types.AssignPermissionToRoleInput) *core.ErrorReturn {
+func (ps *PermissionService) AssignPermissionToRole(
+	ctx context.Context, input types.AssignPermissionToRoleInput,
+) *core.ErrorReturn {
 	if err := ps.PermissionRepository.AssignPermissionToRole(ctx, input.RoleID, input.PermissionIDs); err != nil {
 		return &core.ErrorReturn{ErrorCode: authcore.ErrRoleAssignPermission, Err: err}
 	}

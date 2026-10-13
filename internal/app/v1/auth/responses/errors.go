@@ -60,5 +60,8 @@ func ReturnError(ctx *gin.Context, failure *core.ErrorReturn) {
 	if !ok {
 		presentation = errorPresentations[core.ErrApp]
 	}
-	response.ReturnError(ctx, presentation.status, failure.ErrorCode, authMessage(ctx.GetString(config.HeaderLanguage), presentation.key), failure.Err)
+	response.ReturnError(
+		ctx, presentation.status, failure.ErrorCode,
+		authMessage(ctx.GetString(config.HeaderLanguage), presentation.key), failure.Err,
+	)
 }

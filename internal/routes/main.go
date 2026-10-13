@@ -31,23 +31,27 @@ func New(options Options) (*gin.Engine, error) {
 	if options.DB == nil || options.TokenBlacklist == nil || options.Limiter == nil || options.Logger == nil {
 		return nil, errors.New("HTTP router dependencies are incomplete")
 	}
-	authModule, err := auth.NewModule(auth.Dependencies{
-		DB:             options.DB,
-		TokenBlacklist: options.TokenBlacklist,
-		Auth:           options.Config.Auth,
-		Limiter:        options.Limiter,
-		Jobs:           options.Jobs,
-	})
+	authModule, err := auth.NewModule(
+		auth.Dependencies{
+			DB:             options.DB,
+			TokenBlacklist: options.TokenBlacklist,
+			Auth:           options.Config.Auth,
+			Limiter:        options.Limiter,
+			Jobs:           options.Jobs,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
-	graphqlModule, err := graphql.NewModule(graphql.Dependencies{
-		DB:      options.DB,
-		Auth:    authModule.AuthMiddleware(),
-		Limiter: options.Limiter,
-		Env:     options.Config.App.Env,
-		Logger:  options.Logger,
-	})
+	graphqlModule, err := graphql.NewModule(
+		graphql.Dependencies{
+			DB:      options.DB,
+			Auth:    authModule.AuthMiddleware(),
+			Limiter: options.Limiter,
+			Env:     options.Config.App.Env,
+			Logger:  options.Logger,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +70,11 @@ func New(options Options) (*gin.Engine, error) {
 	if options.Config.Tracer.Enable {
 		router.Use(otelgin.Middleware(options.Config.Tracer.APM.ServiceName))
 	}
-	router.Use(middlewares.SecurityHeaders(), middlewares.LimitRequestBody(), middlewares.RequestID(), middlewares.RequestLang(), middlewares.RequestLoggerWith(options.Logger), middlewares.CorsWith(options.Config.Cors.AllowOrigin))
+	router.Use(
+		middlewares.SecurityHeaders(), middlewares.LimitRequestBody(), middlewares.RequestID(),
+		middlewares.RequestLang(), middlewares.RequestLoggerWith(options.Logger),
+		middlewares.CorsWith(options.Config.Cors.AllowOrigin),
+	)
 	router.Use(func(c *gin.Context) { c.Set("app_url", options.Config.App.Url); c.Next() })
 	LoadPublic(router)
 	if options.Config.App.Env != config.ReleaseMode {

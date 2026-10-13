@@ -11,7 +11,9 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(StartServerCmd, StartWorkerCmd, cli.NewVersion(), cli.NewMigrate(withDatabase), cli.NewCreateUser(withDatabase))
+	rootCmd.AddCommand(
+		StartServerCmd, StartWorkerCmd, cli.NewVersion(), cli.NewMigrate(withDatabase), cli.NewCreateUser(withDatabase),
+	)
 }
 
 func Execute() error {

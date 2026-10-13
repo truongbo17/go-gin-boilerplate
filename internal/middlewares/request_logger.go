@@ -1,10 +1,11 @@
 package middlewares
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/truongbo17/go-gin-boilerplate/config"
-	"time"
 )
 
 func RequestLoggerWith(log *logrus.Logger) gin.HandlerFunc {

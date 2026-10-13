@@ -16,11 +16,15 @@ import (
 // @Success 200 {object} response.BaseResponse
 // @Router /ping [get]
 func LoadPublic(r *gin.Engine) {
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, response.BaseResponse{
-			Status:     true,
-			StatusCode: http.StatusOK,
-			RequestId:  c.GetString(config.HeaderRequestID),
-		})
-	})
+	r.GET(
+		"/ping", func(c *gin.Context) {
+			c.JSON(
+				http.StatusOK, response.BaseResponse{
+					Status:     true,
+					StatusCode: http.StatusOK,
+					RequestId:  c.GetString(config.HeaderRequestID),
+				},
+			)
+		},
+	)
 }

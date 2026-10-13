@@ -1,11 +1,12 @@
 package requests
 
 import (
+	"net/http"
+	"regexp"
+
 	"github.com/truongbo17/go-gin-boilerplate/config"
 	"github.com/truongbo17/go-gin-boilerplate/internal/i18n"
 	"github.com/truongbo17/go-gin-boilerplate/internal/request"
-	"net/http"
-	"regexp"
 
 	"github.com/gin-gonic/gin"
 	validation "github.com/go-ozzo/ozzo-validation"
@@ -19,17 +20,25 @@ type ListRoleRequest struct {
 }
 
 func (a ListRoleRequest) Validate(lang string) error {
-	return validation.ValidateStruct(&a,
-		validation.Field(&a.PerPage,
+	return validation.ValidateStruct(
+		&a,
+		validation.Field(
+			&a.PerPage,
 			validation.Min(1).Error(i18n.GetMessage(lang, "validation.min", map[string]string{"min": "1"})),
 			validation.Max(100).Error(i18n.GetMessage(lang, "validation.max", map[string]string{"max": "100"})),
 		),
-		validation.Field(&a.Page,
+		validation.Field(
+			&a.Page,
 			validation.Min(0).Error(i18n.GetMessage(lang, "validation.min", map[string]string{"min": "0"})),
 			validation.Max(10000),
 		),
-		validation.Field(&a.Search,
-			validation.Length(0, 100).Error(i18n.GetMessage(lang, "validation.length", map[string]string{"min": "0", "max": "100"})),
+		validation.Field(
+			&a.Search,
+			validation.Length(0, 100).Error(
+				i18n.GetMessage(
+					lang, "validation.length", map[string]string{"min": "0", "max": "100"},
+				),
+			),
 		),
 	)
 }
@@ -58,18 +67,34 @@ type CreateRoleRequest struct {
 }
 
 func (a CreateRoleRequest) Validate(lang string) error {
-	return validation.ValidateStruct(&a,
-		validation.Field(&a.Name,
+	return validation.ValidateStruct(
+		&a,
+		validation.Field(
+			&a.Name,
 			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
-			validation.Length(1, 100).Error(i18n.GetMessage(lang, "validation.length", map[string]string{"min": "1", "max": "100"})),
+			validation.Length(1, 100).Error(
+				i18n.GetMessage(
+					lang, "validation.length", map[string]string{"min": "1", "max": "100"},
+				),
+			),
 		),
-		validation.Field(&a.Slug,
+		validation.Field(
+			&a.Slug,
 			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
-			validation.Length(1, 100).Error(i18n.GetMessage(lang, "validation.length", map[string]string{"min": "1", "max": "100"})),
+			validation.Length(1, 100).Error(
+				i18n.GetMessage(
+					lang, "validation.length", map[string]string{"min": "1", "max": "100"},
+				),
+			),
 			validation.Match(roleSlugPattern),
 		),
-		validation.Field(&a.Description,
-			validation.Length(0, 500).Error(i18n.GetMessage(lang, "validation.length", map[string]string{"min": "0", "max": "500"})),
+		validation.Field(
+			&a.Description,
+			validation.Length(0, 500).Error(
+				i18n.GetMessage(
+					lang, "validation.length", map[string]string{"min": "0", "max": "500"},
+				),
+			),
 		),
 	)
 }
@@ -98,18 +123,34 @@ type UpdateRoleRequest struct {
 }
 
 func (a UpdateRoleRequest) Validate(lang string) error {
-	return validation.ValidateStruct(&a,
-		validation.Field(&a.Name,
+	return validation.ValidateStruct(
+		&a,
+		validation.Field(
+			&a.Name,
 			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
-			validation.Length(1, 100).Error(i18n.GetMessage(lang, "validation.length", map[string]string{"min": "1", "max": "100"})),
+			validation.Length(1, 100).Error(
+				i18n.GetMessage(
+					lang, "validation.length", map[string]string{"min": "1", "max": "100"},
+				),
+			),
 		),
-		validation.Field(&a.Slug,
+		validation.Field(
+			&a.Slug,
 			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
-			validation.Length(1, 100).Error(i18n.GetMessage(lang, "validation.length", map[string]string{"min": "1", "max": "100"})),
+			validation.Length(1, 100).Error(
+				i18n.GetMessage(
+					lang, "validation.length", map[string]string{"min": "1", "max": "100"},
+				),
+			),
 			validation.Match(roleSlugPattern),
 		),
-		validation.Field(&a.Description,
-			validation.Length(0, 500).Error(i18n.GetMessage(lang, "validation.length", map[string]string{"min": "0", "max": "500"})),
+		validation.Field(
+			&a.Description,
+			validation.Length(0, 500).Error(
+				i18n.GetMessage(
+					lang, "validation.length", map[string]string{"min": "0", "max": "500"},
+				),
+			),
 		),
 	)
 }
@@ -136,8 +177,10 @@ type AssignPermissionToRoleRequest struct {
 }
 
 func (a AssignPermissionToRoleRequest) Validate(lang string) error {
-	return validation.ValidateStruct(&a,
-		validation.Field(&a.PermissionIDs,
+	return validation.ValidateStruct(
+		&a,
+		validation.Field(
+			&a.PermissionIDs,
 			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
 		),
 	)

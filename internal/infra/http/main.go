@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	json "github.com/json-iterator/go"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"io"
 	"net/http"
 	"net/url"
 	"time"
+
+	json "github.com/json-iterator/go"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func New() *BaseRequest {
@@ -29,7 +30,9 @@ const maxResponseBytes = 8 << 20
 
 var ErrResponseTooLarge = errors.New("HTTP response exceeds 8 MiB")
 
-func (r *BaseRequest) Do(ctx context.Context, method, urlStr string, headers map[string]string, body any) (*http.Response, []byte, error) {
+func (r *BaseRequest) Do(
+	ctx context.Context, method, urlStr string, headers map[string]string, body any,
+) (*http.Response, []byte, error) {
 	var requestBody []byte
 	var err error
 	if body != nil {
@@ -70,7 +73,9 @@ func (r *BaseRequest) Do(ctx context.Context, method, urlStr string, headers map
 	return resp, respBody, nil
 }
 
-func (r *BaseRequest) Get(ctx context.Context, baseURL string, headers map[string]string, queryParams map[string]string) (*http.Response, []byte, error) {
+func (r *BaseRequest) Get(
+	ctx context.Context, baseURL string, headers map[string]string, queryParams map[string]string,
+) (*http.Response, []byte, error) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		return nil, nil, err
@@ -85,14 +90,20 @@ func (r *BaseRequest) Get(ctx context.Context, baseURL string, headers map[strin
 	return r.Do(ctx, http.MethodGet, u.String(), headers, nil)
 }
 
-func (r *BaseRequest) Post(ctx context.Context, url string, headers map[string]string, body any) (*http.Response, []byte, error) {
+func (r *BaseRequest) Post(ctx context.Context, url string, headers map[string]string, body any) (
+	*http.Response, []byte, error,
+) {
 	return r.Do(ctx, http.MethodPost, url, headers, body)
 }
 
-func (r *BaseRequest) Put(ctx context.Context, url string, headers map[string]string, body any) (*http.Response, []byte, error) {
+func (r *BaseRequest) Put(ctx context.Context, url string, headers map[string]string, body any) (
+	*http.Response, []byte, error,
+) {
 	return r.Do(ctx, http.MethodPut, url, headers, body)
 }
 
-func (r *BaseRequest) Delete(ctx context.Context, url string, headers map[string]string, body any) (*http.Response, []byte, error) {
+func (r *BaseRequest) Delete(ctx context.Context, url string, headers map[string]string, body any) (
+	*http.Response, []byte, error,
+) {
 	return r.Do(ctx, http.MethodDelete, url, headers, body)
 }

@@ -1,8 +1,9 @@
 package responses
 
 import (
-	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/enums"
 	"time"
+
+	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/enums"
 )
 
 type UserResponse struct {

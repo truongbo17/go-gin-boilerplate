@@ -22,9 +22,11 @@ var StartServerCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Start the server",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return withRuntime(cmd, requirements{database: true, cache: true, tracing: true}, func(r *runtime) error {
-			return runServer(cmd, r)
-		})
+		return withRuntime(
+			cmd, requirements{database: true, cache: true, tracing: true}, func(r *runtime) error {
+				return runServer(cmd, r)
+			},
+		)
 	},
 }
 
@@ -42,14 +44,16 @@ func runServer(cmd *cobra.Command, r *runtime) error {
 		defer queue.Close()
 		jobs = coreworker.New(queue)
 	}
-	router, err := routes.New(routes.Options{
-		Config:         r.config,
-		DB:             r.db,
-		TokenBlacklist: r.cache,
-		Limiter:        rateLimiter,
-		Logger:         r.log,
-		Jobs:           jobs,
-	})
+	router, err := routes.New(
+		routes.Options{
+			Config:         r.config,
+			DB:             r.db,
+			TokenBlacklist: r.cache,
+			Limiter:        rateLimiter,
+			Logger:         r.log,
+			Jobs:           jobs,
+		},
+	)
 	if err != nil {
 		return err
 	}

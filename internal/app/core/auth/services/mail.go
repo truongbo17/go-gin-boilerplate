@@ -72,7 +72,10 @@ func (service MailService) SendPasswordReset(ctx context.Context, email string) 
 	query := link.Query()
 	query.Set("token", token)
 	link.RawQuery = query.Encode()
-	return service.Sender.Send(ctx, user.Email, "Reset your password", "Open this link within 15 minutes to reset your password:\n"+link.String()+"\n")
+	return service.Sender.Send(
+		ctx, user.Email, "Reset your password",
+		"Open this link within 15 minutes to reset your password:\n"+link.String()+"\n",
+	)
 }
 
 func validMailAddress(email string) bool {

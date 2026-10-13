@@ -24,7 +24,8 @@ func (config *Config) validateMail() error {
 	if !config.Mail.Enabled {
 		return nil
 	}
-	if err := validation.ValidateStruct(config,
+	if err := validation.ValidateStruct(
+		config,
 		validation.Field(&config.Cache.RedisHost, validation.Required, is.Host),
 		validation.Field(&config.Cache.RedisPort, validation.Required, is.Port),
 		validation.Field(&config.Mail.Host, validation.Required),

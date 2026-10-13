@@ -9,6 +9,8 @@ import (
 )
 
 func ReturnPasswordResetRequested(ctx *gin.Context) {
-	response.ReturnSuccessStatus(ctx, http.StatusAccepted,
-		authMessage(ctx.GetString(config.HeaderLanguage), "auth.reset_requested"), nil, nil)
+	response.ReturnSuccessStatus(
+		ctx, http.StatusAccepted,
+		authMessage(ctx.GetString(config.HeaderLanguage), "auth.reset_requested"), nil, nil,
+	)
 }

@@ -25,12 +25,18 @@ func NewHandler(params Dependencies) (*Handler, error) {
 		return nil, errors.New("auth mail worker requires a database and Redis")
 	}
 	users := authrepository.NewUserRepository(params.DB)
-	return &Handler{Mail: services.MailService{
-		Users: users,
-		Tokens: new(services.NewAuthService(users, cache.NewRedis(params.Redis), services.AuthSettings{
-			JWTSecretKey: params.JWTSecretKey,
-		})),
-		Sender:   mail.Sender{Config: params.Mail},
-		ResetURL: params.Mail.ResetURL,
-	}}, nil
+	return &Handler{
+		Mail: services.MailService{
+			Users: users,
+			Tokens: new(
+				services.NewAuthService(
+					users, cache.NewRedis(params.Redis), services.AuthSettings{
+						JWTSecretKey: params.JWTSecretKey,
+					},
+				),
+			),
+			Sender:   mail.Sender{Config: params.Mail},
+			ResetURL: params.Mail.ResetURL,
+		},
+	}, nil
 }

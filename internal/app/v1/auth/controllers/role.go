@@ -45,11 +45,13 @@ func (c *RoleController) ListRoles(ctx *gin.Context) {
 	var listRequest, _ = ctx.Get("ListRoleRequest")
 	requestBody, _ := listRequest.(requests.ListRoleRequest)
 
-	roles, err := c.RoleService.ListRoles(ctxHandler, types.ListRolesInput{
-		Search:  requestBody.Search,
-		Page:    requestBody.Page,
-		PerPage: requestBody.PerPage,
-	})
+	roles, err := c.RoleService.ListRoles(
+		ctxHandler, types.ListRolesInput{
+			Search:  requestBody.Search,
+			Page:    requestBody.Page,
+			PerPage: requestBody.PerPage,
+		},
+	)
 	if err != nil {
 		responses.ReturnError(ctx, err)
 		return
@@ -57,14 +59,16 @@ func (c *RoleController) ListRoles(ctx *gin.Context) {
 
 	var roleResponses []responses.RoleResponse
 	for _, role := range roles.Items {
-		roleResponses = append(roleResponses, responses.RoleResponse{
-			ID:          role.ID,
-			Name:        role.Name,
-			Slug:        role.Slug,
-			Description: role.Description,
-			CreatedAt:   role.CreatedAt,
-			UpdatedAt:   role.UpdatedAt,
-		})
+		roleResponses = append(
+			roleResponses, responses.RoleResponse{
+				ID:          role.ID,
+				Name:        role.Name,
+				Slug:        role.Slug,
+				Description: role.Description,
+				CreatedAt:   role.CreatedAt,
+				UpdatedAt:   role.UpdatedAt,
+			},
+		)
 	}
 
 	response.ReturnSuccess(ctx, roleResponses, response.PageMeta(ctx, *roles))
@@ -88,24 +92,28 @@ func (c *RoleController) CreateRole(ctx *gin.Context) {
 	var createRequest, _ = ctx.Get("CreateRoleRequest")
 	requestBody, _ := createRequest.(requests.CreateRoleRequest)
 
-	role, err := c.RoleService.CreateRole(ctxHandler, types.CreateRoleInput{
-		Name:        requestBody.Name,
-		Slug:        requestBody.Slug,
-		Description: requestBody.Description,
-	})
+	role, err := c.RoleService.CreateRole(
+		ctxHandler, types.CreateRoleInput{
+			Name:        requestBody.Name,
+			Slug:        requestBody.Slug,
+			Description: requestBody.Description,
+		},
+	)
 	if err != nil {
 		responses.ReturnError(ctx, err)
 		return
 	}
 
-	response.ReturnSuccess(ctx, responses.RoleResponse{
-		ID:          role.ID,
-		Name:        role.Name,
-		Slug:        role.Slug,
-		Description: role.Description,
-		CreatedAt:   role.CreatedAt,
-		UpdatedAt:   role.UpdatedAt,
-	}, nil)
+	response.ReturnSuccess(
+		ctx, responses.RoleResponse{
+			ID:          role.ID,
+			Name:        role.Name,
+			Slug:        role.Slug,
+			Description: role.Description,
+			CreatedAt:   role.CreatedAt,
+			UpdatedAt:   role.UpdatedAt,
+		}, nil,
+	)
 }
 
 // UpdateRole godoc
@@ -132,25 +140,29 @@ func (c *RoleController) UpdateRole(ctx *gin.Context) {
 	var updateRequest, _ = ctx.Get("UpdateRoleRequest")
 	requestBody, _ := updateRequest.(requests.UpdateRoleRequest)
 
-	role, err := c.RoleService.UpdateRole(ctxHandler, types.UpdateRoleInput{
-		ID:          id,
-		Name:        requestBody.Name,
-		Slug:        requestBody.Slug,
-		Description: requestBody.Description,
-	})
+	role, err := c.RoleService.UpdateRole(
+		ctxHandler, types.UpdateRoleInput{
+			ID:          id,
+			Name:        requestBody.Name,
+			Slug:        requestBody.Slug,
+			Description: requestBody.Description,
+		},
+	)
 	if err != nil {
 		responses.ReturnError(ctx, err)
 		return
 	}
 
-	response.ReturnSuccess(ctx, responses.RoleResponse{
-		ID:          role.ID,
-		Name:        role.Name,
-		Slug:        role.Slug,
-		Description: role.Description,
-		CreatedAt:   role.CreatedAt,
-		UpdatedAt:   role.UpdatedAt,
-	}, nil)
+	response.ReturnSuccess(
+		ctx, responses.RoleResponse{
+			ID:          role.ID,
+			Name:        role.Name,
+			Slug:        role.Slug,
+			Description: role.Description,
+			CreatedAt:   role.CreatedAt,
+			UpdatedAt:   role.UpdatedAt,
+		}, nil,
+	)
 }
 
 // DeleteRole godoc
@@ -173,9 +185,11 @@ func (c *RoleController) DeleteRole(ctx *gin.Context) {
 		return
 	}
 
-	err := c.RoleService.DeleteRole(ctxHandler, types.DeleteRoleInput{
-		ID: id,
-	})
+	err := c.RoleService.DeleteRole(
+		ctxHandler, types.DeleteRoleInput{
+			ID: id,
+		},
+	)
 	if err != nil {
 		responses.ReturnError(ctx, err)
 		return
@@ -212,19 +226,23 @@ func (c *RoleController) GetRolePermissions(ctx *gin.Context) {
 
 	var permissionResponses []responses.PermissionResponse
 	for _, permission := range permissions {
-		permissionResponses = append(permissionResponses, responses.PermissionResponse{
-			ID:          permission.ID,
-			Name:        permission.Name,
-			Slug:        permission.Slug,
-			Description: permission.Description,
-			CreatedAt:   permission.CreatedAt,
-			UpdatedAt:   permission.UpdatedAt,
-		})
+		permissionResponses = append(
+			permissionResponses, responses.PermissionResponse{
+				ID:          permission.ID,
+				Name:        permission.Name,
+				Slug:        permission.Slug,
+				Description: permission.Description,
+				CreatedAt:   permission.CreatedAt,
+				UpdatedAt:   permission.UpdatedAt,
+			},
+		)
 	}
 
-	response.ReturnSuccess(ctx, responses.RolePermissionsResponse{
-		Permissions: permissionResponses,
-	}, nil)
+	response.ReturnSuccess(
+		ctx, responses.RolePermissionsResponse{
+			Permissions: permissionResponses,
+		}, nil,
+	)
 }
 
 // AssignPermissionToRole godoc
@@ -251,10 +269,12 @@ func (c *RoleController) AssignPermissionToRole(ctx *gin.Context) {
 	var assignRequest, _ = ctx.Get("AssignPermissionToRoleRequest")
 	requestBody, _ := assignRequest.(requests.AssignPermissionToRoleRequest)
 
-	err := c.PermissionService.AssignPermissionToRole(ctxHandler, types.AssignPermissionToRoleInput{
-		RoleID:        id,
-		PermissionIDs: requestBody.PermissionIDs,
-	})
+	err := c.PermissionService.AssignPermissionToRole(
+		ctxHandler, types.AssignPermissionToRoleInput{
+			RoleID:        id,
+			PermissionIDs: requestBody.PermissionIDs,
+		},
+	)
 	if err != nil {
 		responses.ReturnError(ctx, err)
 		return

@@ -33,12 +33,14 @@ func OpenS3(ctx context.Context, opts S3Options) (*s3.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("load S3 configuration: %w", err)
 	}
-	return s3.NewFromConfig(cfg, func(client *s3.Options) {
-		if opts.Endpoint != "" {
-			client.BaseEndpoint = aws.String(opts.Endpoint)
-		}
-		client.UsePathStyle = opts.PathStyle
-	}), nil
+	return s3.NewFromConfig(
+		cfg, func(client *s3.Options) {
+			if opts.Endpoint != "" {
+				client.BaseEndpoint = aws.String(opts.Endpoint)
+			}
+			client.UsePathStyle = opts.PathStyle
+		},
+	), nil
 }
 
 // CheckBucket verifies access to one required bucket. HeadBucket requires the

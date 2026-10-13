@@ -3,12 +3,13 @@ package middlewares
 import (
 	"crypto/subtle"
 	"errors"
+	"net/http"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/truongbo17/go-gin-boilerplate/config"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/enums"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/services"
-	"net/http"
-	"strings"
 )
 
 func JWTMiddleware(auth services.AuthService) gin.HandlerFunc {

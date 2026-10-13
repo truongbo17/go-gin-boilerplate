@@ -8,7 +8,8 @@ import (
 var CreatePermissionsTable = &gormigrate.Migration{
 	ID: "2025012201_create_permissions_table",
 	Migrate: func(tx *gorm.DB) error {
-		return tx.Exec(`
+		return tx.Exec(
+			`
 			CREATE TABLE permissions (
 				id                 INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 				name               VARCHAR(100) NOT NULL,
@@ -20,7 +21,8 @@ var CreatePermissionsTable = &gormigrate.Migration{
 				updated_at         DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
 				deleted_at         DATETIME NULL
 			);
-		`).Error
+		`,
+		).Error
 	},
 	Rollback: func(tx *gorm.DB) error {
 		return tx.Exec("DROP TABLE IF EXISTS permissions;").Error

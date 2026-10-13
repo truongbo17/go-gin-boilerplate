@@ -14,10 +14,12 @@ func (r *RoleRepository) ListPage(ctx context.Context, query page.Query) (*page.
 	params := repository.NewPaginateParam()
 	params.Page, params.PerPage = query.Number, query.Size
 	if query.Search != "" {
-		params.ExtraWheres = append(params.ExtraWheres, repository.WhereClause{
-			Query: "name LIKE ? OR slug LIKE ?",
-			Args:  []any{"%" + query.Search + "%", "%" + query.Search + "%"},
-		})
+		params.ExtraWheres = append(
+			params.ExtraWheres, repository.WhereClause{
+				Query: "name LIKE ? OR slug LIKE ?",
+				Args:  []any{"%" + query.Search + "%", "%" + query.Search + "%"},
+			},
+		)
 	}
 	return r.Paginate(ctx, params)
 }
@@ -35,9 +37,11 @@ func (r *RoleRepository) FindByID(ctx context.Context, id uint) (*models.Role, e
 }
 
 func (r *RoleRepository) UpdateFields(ctx context.Context, role *models.Role, input types.UpdateRoleInput) error {
-	if err := r.Update(ctx, role, map[string]any{
-		"name": input.Name, "slug": input.Slug, "description": input.Description, "updated_by": input.UserID,
-	}); err != nil {
+	if err := r.Update(
+		ctx, role, map[string]any{
+			"name": input.Name, "slug": input.Slug, "description": input.Description, "updated_by": input.UserID,
+		},
+	); err != nil {
 		return err
 	}
 	role.Name, role.Slug, role.Description, role.UpdatedBy = input.Name, input.Slug, input.Description, input.UserID

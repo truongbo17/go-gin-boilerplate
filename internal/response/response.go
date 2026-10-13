@@ -36,18 +36,22 @@ type MetaData struct {
 }
 
 func ReturnSuccess(ctx *gin.Context, data any, extraData any) {
-	ReturnSuccessStatus(ctx, http.StatusOK, i18n.GetMessage(ctx.GetString(config.HeaderLanguage), "success.200", nil), data, extraData)
+	ReturnSuccessStatus(
+		ctx, http.StatusOK, i18n.GetMessage(ctx.GetString(config.HeaderLanguage), "success.200", nil), data, extraData,
+	)
 }
 
 func ReturnSuccessStatus(ctx *gin.Context, status int, message string, data any, extraData any) {
-	ctx.JSON(status, BaseResponse{
-		Status:     true,
-		StatusCode: status,
-		RequestId:  ctx.GetString(config.HeaderRequestID),
-		Message:    message,
-		Data:       data,
-		ExtraData:  extraData,
-	})
+	ctx.JSON(
+		status, BaseResponse{
+			Status:     true,
+			StatusCode: status,
+			RequestId:  ctx.GetString(config.HeaderRequestID),
+			Message:    message,
+			Data:       data,
+			ExtraData:  extraData,
+		},
+	)
 	ctx.Abort()
 }
 
@@ -72,12 +76,14 @@ func ReturnError(ctx *gin.Context, status int, code int, message string, err any
 		}
 	}
 
-	ctx.JSON(status, BaseResponse{
-		RequestId:  ctx.GetString(config.HeaderRequestID),
-		StatusCode: code,
-		Message:    message,
-		Error:      errMsg,
-	})
+	ctx.JSON(
+		status, BaseResponse{
+			RequestId:  ctx.GetString(config.HeaderRequestID),
+			StatusCode: code,
+			Message:    message,
+			Error:      errMsg,
+		},
+	)
 	ctx.Abort()
 }
 

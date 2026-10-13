@@ -12,12 +12,14 @@ import (
 
 func Open(cacheConfig config.Cache) (*redis.Client, error) {
 	if cacheConfig.CacheStore == config.CacheStoreRedis {
-		redisClient := redis.NewClient(&redis.Options{
-			Addr:        fmt.Sprintf("%s:%s", cacheConfig.RedisHost, cacheConfig.RedisPort),
-			Username:    cacheConfig.RedisUsername,
-			Password:    cacheConfig.RedisPassword,
-			DialTimeout: 3 * time.Second,
-		})
+		redisClient := redis.NewClient(
+			&redis.Options{
+				Addr:        fmt.Sprintf("%s:%s", cacheConfig.RedisHost, cacheConfig.RedisPort),
+				Username:    cacheConfig.RedisUsername,
+				Password:    cacheConfig.RedisPassword,
+				DialTimeout: 3 * time.Second,
+			},
+		)
 
 		if err := redisotel.InstrumentTracing(redisClient); err != nil {
 			_ = redisClient.Close()

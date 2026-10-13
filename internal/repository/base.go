@@ -71,7 +71,9 @@ func (r *BaseRepository[T]) InsertIgnore(ctx context.Context, entities *[]T) err
 
 var ErrConflictColumns = errors.New("conflictColumns must not be empty")
 
-func (r *BaseRepository[T]) InsertOrUpdate(ctx context.Context, entity *T, conflictColumns []string, updateColumns []string) error {
+func (r *BaseRepository[T]) InsertOrUpdate(
+	ctx context.Context, entity *T, conflictColumns []string, updateColumns []string,
+) error {
 	if len(conflictColumns) == 0 {
 		return ErrConflictColumns
 	}
@@ -128,14 +130,18 @@ func (r *BaseRepository[T]) FindByCondition(ctx context.Context, condition any, 
 
 func (r *BaseRepository[T]) FindByConditionForUpdate(ctx context.Context, condition any, args ...any) ([]T, error) {
 	var entities []T
-	err := r.DB.WithContext(ctx).Clauses(clause.Locking{Strength: "UPDATE"}).Where(condition, args...).Find(&entities).Error
+	err := r.DB.WithContext(ctx).Clauses(clause.Locking{Strength: "UPDATE"}).Where(
+		condition, args...,
+	).Find(&entities).Error
 	if err != nil {
 		return nil, err
 	}
 	return entities, nil
 }
 
-func (r *BaseRepository[T]) FindByConditionAndOrder(ctx context.Context, orderBy string, condition any, args ...any) ([]T, error) {
+func (r *BaseRepository[T]) FindByConditionAndOrder(
+	ctx context.Context, orderBy string, condition any, args ...any,
+) ([]T, error) {
 	var entities []T
 	query := r.DB.WithContext(ctx).Where(condition, args...)
 
@@ -150,7 +156,9 @@ func (r *BaseRepository[T]) FindByConditionAndOrder(ctx context.Context, orderBy
 	return entities, nil
 }
 
-func (r *BaseRepository[T]) FirstByConditionAndOrder(ctx context.Context, orderBy string, condition any, args ...any) (*T, error) {
+func (r *BaseRepository[T]) FirstByConditionAndOrder(
+	ctx context.Context, orderBy string, condition any, args ...any,
+) (*T, error) {
 	var entities T
 	query := r.DB.WithContext(ctx).Where(condition, args...)
 
@@ -174,7 +182,9 @@ func (r *BaseRepository[T]) FindOneByCondition(ctx context.Context, condition an
 	return &entity, err
 }
 
-func (r *BaseRepository[T]) FindOneByConditionAndOrder(ctx context.Context, condition any, order any, args ...any) (*T, error) {
+func (r *BaseRepository[T]) FindOneByConditionAndOrder(ctx context.Context, condition any, order any, args ...any) (
+	*T, error,
+) {
 	var entity T
 	err := r.DB.WithContext(ctx).Where(condition, args...).Order(order).First(&entity).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -183,7 +193,9 @@ func (r *BaseRepository[T]) FindOneByConditionAndOrder(ctx context.Context, cond
 	return &entity, err
 }
 
-func (r *BaseRepository[T]) FindOneByConditionWithSelect(ctx context.Context, condition, sec any, args ...any) (*T, error) {
+func (r *BaseRepository[T]) FindOneByConditionWithSelect(ctx context.Context, condition, sec any, args ...any) (
+	*T, error,
+) {
 	var entity T
 	err := r.DB.WithContext(ctx).Where(condition, args...).Select(sec).First(&entity).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {

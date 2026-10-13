@@ -7,7 +7,14 @@ import (
 )
 
 func Run(db *gorm.DB) error {
-	migrations := []*gormigrate.Migration{CreateUsersTable, CreateRolesTable, CreatePermissionsTable, CreateRolePermissionsTable, CreateUserRolesTable}
-	m := gormigrate.New(db, &gormigrate.Options{TableName: config.TableMigrate, IDColumnName: "id", IDColumnSize: config.DefaultStringSizeMySql, UseTransaction: true, ValidateUnknownMigrations: true}, migrations)
+	migrations := []*gormigrate.Migration{
+		CreateUsersTable, CreateRolesTable, CreatePermissionsTable, CreateRolePermissionsTable, CreateUserRolesTable,
+	}
+	m := gormigrate.New(
+		db, &gormigrate.Options{
+			TableName: config.TableMigrate, IDColumnName: "id", IDColumnSize: config.DefaultStringSizeMySql,
+			UseTransaction: true, ValidateUnknownMigrations: true,
+		}, migrations,
+	)
 	return m.Migrate()
 }

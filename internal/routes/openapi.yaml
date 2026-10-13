@@ -8,13 +8,13 @@ servers:
 paths:
   /ping:
     get:
-      tags: [Health]
+      tags: [ Health ]
       summary: Process health
       responses:
         '200': { $ref: '#/components/responses/Success' }
   /api/v1/auth/login:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Log in and receive an access token
       requestBody:
         required: true
@@ -27,7 +27,7 @@ paths:
         '429': { $ref: '#/components/responses/RateLimited' }
   /api/v1/auth/register:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       operationId: registerUser
       summary: Register a user
       description: >-
@@ -36,7 +36,7 @@ paths:
         The email_queued field reports whether the job was enqueued; the user remains
         created if queueing fails. No access token is returned. Limited to 5 requests
         per minute per client IP.
-      security: []
+      security: [ ]
       parameters:
         - { $ref: '#/components/parameters/Language' }
       requestBody:
@@ -82,14 +82,14 @@ paths:
         '503': { description: Rate limit backend unavailable }
   /api/v1/auth/forgot-password:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       operationId: requestPasswordReset
       summary: Queue a password reset email if the account exists
       description: >-
         Requires MAIL_ENABLED=true and a running worker. Returns the same 202 response
         for known and unknown addresses. The worker sends a reset link only for an
         active account. Limited to 5 requests per minute per client IP.
-      security: []
+      security: [ ]
       parameters:
         - { $ref: '#/components/parameters/Language' }
       requestBody:
@@ -130,14 +130,14 @@ paths:
                 errors: null
   /api/v1/auth/reset-password:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       operationId: resetPassword
       summary: Set a new password with an emailed reset token
       description: >-
         The token is valid for 15 minutes and becomes unusable after a successful
         password change. Existing access tokens for the account also become invalid.
         Limited to 10 requests per minute per client IP.
-      security: []
+      security: [ ]
       parameters:
         - { $ref: '#/components/parameters/Language' }
       requestBody:
@@ -183,25 +183,25 @@ paths:
         '503': { description: Rate limit backend unavailable }
   /api/v1/auth/me:
     get:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Get the current user
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       responses:
         '200': { $ref: '#/components/responses/Success' }
         '401': { $ref: '#/components/responses/Unauthorized' }
   /api/v1/auth/logout:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Revoke the current access token
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       responses:
         '200': { $ref: '#/components/responses/Success' }
         '401': { $ref: '#/components/responses/Unauthorized' }
   /api/v1/auth/change-pass:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Change password and receive a new access token
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       requestBody:
         required: true
         content:
@@ -213,9 +213,9 @@ paths:
         '422': { $ref: '#/components/responses/Error' }
   /api/v1/rbac/roles:
     get:
-      tags: [Roles]
+      tags: [ Roles ]
       summary: List roles
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       x-required-permission: role:index
       parameters:
         - { $ref: '#/components/parameters/Page' }
@@ -225,9 +225,9 @@ paths:
         '200': { $ref: '#/components/responses/Success' }
         '403': { $ref: '#/components/responses/Forbidden' }
     post:
-      tags: [Roles]
+      tags: [ Roles ]
       summary: Create a role
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       x-required-permission: role:create
       requestBody:
         required: true
@@ -241,9 +241,9 @@ paths:
     parameters:
       - { $ref: '#/components/parameters/ID' }
     put:
-      tags: [Roles]
+      tags: [ Roles ]
       summary: Update a role
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       x-required-permission: role:update
       requestBody:
         required: true
@@ -254,9 +254,9 @@ paths:
         '200': { $ref: '#/components/responses/Success' }
         '403': { $ref: '#/components/responses/Forbidden' }
     delete:
-      tags: [Roles]
+      tags: [ Roles ]
       summary: Delete a role
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       x-required-permission: role:delete
       responses:
         '200': { $ref: '#/components/responses/Success' }
@@ -265,17 +265,17 @@ paths:
     parameters:
       - { $ref: '#/components/parameters/ID' }
     get:
-      tags: [Roles]
+      tags: [ Roles ]
       summary: Get permissions assigned to a role
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       x-required-permission: role:assign_permission
       responses:
         '200': { $ref: '#/components/responses/Success' }
         '403': { $ref: '#/components/responses/Forbidden' }
     post:
-      tags: [Roles]
+      tags: [ Roles ]
       summary: Assign permissions to a role
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       x-required-permission: role:assign_permission
       requestBody:
         required: true
@@ -287,9 +287,9 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
   /api/v1/rbac/permissions:
     get:
-      tags: [Permissions]
+      tags: [ Permissions ]
       summary: List permissions
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       x-required-permission: permission:index
       parameters:
         - { $ref: '#/components/parameters/Page' }
@@ -299,9 +299,9 @@ paths:
         '200': { $ref: '#/components/responses/Success' }
         '403': { $ref: '#/components/responses/Forbidden' }
     post:
-      tags: [Permissions]
+      tags: [ Permissions ]
       summary: Create a permission
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       x-required-permission: permission:create
       requestBody:
         required: true
@@ -315,9 +315,9 @@ paths:
     parameters:
       - { $ref: '#/components/parameters/ID' }
     put:
-      tags: [Permissions]
+      tags: [ Permissions ]
       summary: Update a permission
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       x-required-permission: permission:update
       requestBody:
         required: true
@@ -328,18 +328,18 @@ paths:
         '200': { $ref: '#/components/responses/Success' }
         '403': { $ref: '#/components/responses/Forbidden' }
     delete:
-      tags: [Permissions]
+      tags: [ Permissions ]
       summary: Delete a permission
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       x-required-permission: permission:delete
       responses:
         '200': { $ref: '#/components/responses/Success' }
         '403': { $ref: '#/components/responses/Forbidden' }
   /api/v1/rbac/users:
     get:
-      tags: [Users]
+      tags: [ Users ]
       summary: List users
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       x-required-permission: user:index
       parameters:
         - { $ref: '#/components/parameters/Page' }
@@ -352,17 +352,17 @@ paths:
     parameters:
       - { $ref: '#/components/parameters/ID' }
     get:
-      tags: [Users]
+      tags: [ Users ]
       summary: Get roles assigned to a user
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       x-required-permission: user:assign_role
       responses:
         '200': { $ref: '#/components/responses/Success' }
         '403': { $ref: '#/components/responses/Forbidden' }
     post:
-      tags: [Users]
+      tags: [ Users ]
       summary: Assign roles to a user
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       x-required-permission: user:assign_role
       requestBody:
         required: true
@@ -374,10 +374,10 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
   /api/v1/graphql:
     post:
-      tags: [GraphQL]
+      tags: [ GraphQL ]
       summary: Execute an authenticated GraphQL query
       description: See internal/app/graphql/auth/schema.graphqls for the schema. Body limit is 64 KiB; execution timeout is 2 seconds.
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       requestBody:
         required: true
         content:
@@ -389,9 +389,9 @@ paths:
         '413': { description: Request body exceeds 64 KiB }
   /api/v1/public/enum-options/{key}:
     get:
-      tags: [GraphQL]
+      tags: [ GraphQL ]
       summary: Get options for a public enum key
-      security: []
+      security: [ ]
       parameters:
         - name: key
           in: path
@@ -402,15 +402,15 @@ paths:
         '404': { description: Unknown enum key }
   /api/v1/graphql/entity-options:
     get:
-      tags: [GraphQL]
+      tags: [ GraphQL ]
       summary: Get paginated entity options
       description: Keys users, roles and permissions require their matching RBAC read permission.
-      security: [{ bearerAuth: [] }]
+      security: [ { bearerAuth: [ ] } ]
       parameters:
         - name: key
           in: query
           required: true
-          schema: { type: string, enum: [users, roles, permissions] }
+          schema: { type: string, enum: [ users, roles, permissions ] }
         - name: keyword
           in: query
           schema: { type: string, maxLength: 100 }
@@ -437,7 +437,7 @@ components:
       in: header
       required: false
       description: Response language; examples below use en.
-      schema: { type: string, enum: [en, vi], default: vi }
+      schema: { type: string, enum: [ en, vi ], default: vi }
     ID:
       name: id
       in: path
@@ -478,15 +478,15 @@ components:
   schemas:
     Envelope:
       type: object
-      required: [status, status_code, request_id, message, data, extra_data, errors]
+      required: [ status, status_code, request_id, message, data, extra_data, errors ]
       properties:
         status: { type: boolean, description: True for a successful response }
         status_code: { type: integer, description: Application status or error code }
         request_id: { type: string, format: uuid }
         message: { type: string, description: Localized human-readable message }
-        data: {}
-        extra_data: {}
-        errors: {}
+        data: { }
+        extra_data: { }
+        errors: { }
     RegisterResponse:
       allOf:
         - { $ref: '#/components/schemas/Envelope' }
@@ -494,19 +494,19 @@ components:
           properties:
             data:
               type: object
-              required: [id, email_queued]
+              required: [ id, email_queued ]
               properties:
                 id: { type: integer, minimum: 1, description: ID of the created user }
                 email_queued: { type: boolean, description: Whether a welcome email job was enqueued }
     LoginInput:
       type: object
-      required: [username, password]
+      required: [ username, password ]
       properties:
         username: { type: string }
         password: { type: string, format: password }
     RegisterInput:
       type: object
-      required: [username, email, password]
+      required: [ username, email, password ]
       properties:
         username: { type: string, minLength: 3, maxLength: 50 }
         email: { type: string, format: email, maxLength: 100 }
@@ -518,12 +518,12 @@ components:
           description: Requires upper and lower case letters, a digit, and a special character.
     ForgotPasswordInput:
       type: object
-      required: [email]
+      required: [ email ]
       properties:
         email: { type: string, format: email, maxLength: 100 }
     ResetPasswordInput:
       type: object
-      required: [token, new_password, confirm_password]
+      required: [ token, new_password, confirm_password ]
       properties:
         token: { type: string, maxLength: 2048, description: Token from the emailed reset link }
         new_password:
@@ -535,42 +535,42 @@ components:
         confirm_password: { type: string, format: password, description: Must match new_password }
     ChangePasswordInput:
       type: object
-      required: [old_password, new_password, confirm_password]
+      required: [ old_password, new_password, confirm_password ]
       properties:
         old_password: { type: string, format: password }
         new_password: { type: string, format: password }
         confirm_password: { type: string, format: password }
     RoleInput:
       type: object
-      required: [name, slug]
+      required: [ name, slug ]
       properties:
         name: { type: string, maxLength: 100 }
         slug: { type: string, maxLength: 100 }
         description: { type: string, maxLength: 500 }
     PermissionInput:
       type: object
-      required: [name, slug]
+      required: [ name, slug ]
       properties:
         name: { type: string, maxLength: 100 }
         slug: { type: string, maxLength: 100 }
         description: { type: string, maxLength: 500 }
     AssignPermissionsInput:
       type: object
-      required: [permission_ids]
+      required: [ permission_ids ]
       properties:
         permission_ids:
           type: array
           items: { type: integer, minimum: 1 }
     AssignRolesInput:
       type: object
-      required: [role_ids]
+      required: [ role_ids ]
       properties:
         role_ids:
           type: array
           items: { type: integer, minimum: 1 }
     GraphQLInput:
       type: object
-      required: [query]
+      required: [ query ]
       properties:
         query: { type: string, example: '{ me { id username email status } }' }
         variables: { type: object, additionalProperties: true }

@@ -52,11 +52,15 @@ type TokenBlacklist interface {
 	Get(context.Context, string) (any, error)
 }
 
-func NewAuthService(userRepository AuthUserRepository, tokenBlacklist TokenBlacklist, authConfig AuthSettings) AuthService {
+func NewAuthService(
+	userRepository AuthUserRepository, tokenBlacklist TokenBlacklist, authConfig AuthSettings,
+) AuthService {
 	return AuthService{UserRepository: userRepository, TokenBlacklist: tokenBlacklist, AuthConfig: authConfig}
 }
 
-func (authService *AuthService) ChangePassword(ctx context.Context, user *models.User, oldPassword, newPassword string) (string, *core.ErrorReturn) {
+func (authService *AuthService) ChangePassword(
+	ctx context.Context, user *models.User, oldPassword, newPassword string,
+) (string, *core.ErrorReturn) {
 	if user == nil {
 		return "", &core.ErrorReturn{ErrorCode: authcore.ErrChangePass}
 	}
@@ -84,7 +88,9 @@ func (authService *AuthService) ChangePassword(ctx context.Context, user *models
 	return token, nil
 }
 
-func (authService *AuthService) Login(ctx context.Context, input types.LoginInput) (*types.LoginOutput, *core.ErrorReturn) {
+func (authService *AuthService) Login(ctx context.Context, input types.LoginInput) (
+	*types.LoginOutput, *core.ErrorReturn,
+) {
 	user, err := authService.UserRepository.FindByUsername(ctx, input.Username)
 	if err != nil {
 		return nil, &core.ErrorReturn{
@@ -121,7 +127,9 @@ func (authService *AuthService) Login(ctx context.Context, input types.LoginInpu
 	}, nil
 }
 
-func (authService *AuthService) Register(ctx context.Context, input types.RegisterInput) (*types.RegisterOutput, *core.ErrorReturn) {
+func (authService *AuthService) Register(ctx context.Context, input types.RegisterInput) (
+	*types.RegisterOutput, *core.ErrorReturn,
+) {
 	exist, err := authService.UserRepository.FindByEmail(ctx, input.Email)
 	if err != nil {
 		return nil, &core.ErrorReturn{
@@ -171,7 +179,9 @@ func (authService *AuthService) Register(ctx context.Context, input types.Regist
 	var notificationQueued bool
 	if authService.Jobs != nil {
 		// A failed notification must not turn a committed registration into a retryable create.
-		notificationErr = authService.Jobs.Dispatch(ctx, coreworker.TypeWelcomeEmail, coreworker.WelcomeEmailParams{UserID: user.ID})
+		notificationErr = authService.Jobs.Dispatch(
+			ctx, coreworker.TypeWelcomeEmail, coreworker.WelcomeEmailParams{UserID: user.ID},
+		)
 		notificationQueued = notificationErr == nil
 	}
 
@@ -187,7 +197,9 @@ func (authService *AuthService) RequestPasswordReset(ctx context.Context, email 
 	if authService.Jobs == nil {
 		return &core.ErrorReturn{ErrorCode: authcore.ErrAuthResetUnavailable}
 	}
-	if err := authService.Jobs.Dispatch(ctx, coreworker.TypePasswordResetEmail, coreworker.PasswordResetEmailParams{Email: strings.TrimSpace(email)}); err != nil {
+	if err := authService.Jobs.Dispatch(
+		ctx, coreworker.TypePasswordResetEmail, coreworker.PasswordResetEmailParams{Email: strings.TrimSpace(email)},
+	); err != nil {
 		return &core.ErrorReturn{ErrorCode: authcore.ErrAuthResetUnavailable, Err: err}
 	}
 	return nil
@@ -222,7 +234,9 @@ func (authService *AuthService) ResetPassword(ctx context.Context, input types.R
 func (authService *AuthService) Logout(ctx context.Context, input types.LogoutInput) *core.ErrorReturn {
 	parts := strings.Fields(input.Token)
 	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
-		return &core.ErrorReturn{Err: errors.New("invalid authorization header"), ErrorCode: authcore.ErrAuthLogoutFailed}
+		return &core.ErrorReturn{
+			Err: errors.New("invalid authorization header"), ErrorCode: authcore.ErrAuthLogoutFailed,
+		}
 	}
 	token := parts[1]
 	userID, err := authService.VerifyToken(ctx, token, enums.TokenTypeAccess)
@@ -230,12 +244,14 @@ func (authService *AuthService) Logout(ctx context.Context, input types.LogoutIn
 		return &core.ErrorReturn{Err: errors.New("invalid token"), ErrorCode: authcore.ErrAuthLogoutFailed}
 	}
 	claims := &types.UserClaims{}
-	_, err = jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (any, error) {
-		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-			return nil, errors.New("invalid signing method")
-		}
-		return []byte(authService.AuthConfig.JWTSecretKey), nil
-	})
+	_, err = jwt.ParseWithClaims(
+		token, claims, func(token *jwt.Token) (any, error) {
+			if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+				return nil, errors.New("invalid signing method")
+			}
+			return []byte(authService.AuthConfig.JWTSecretKey), nil
+		},
+	)
 	if err != nil || claims.ExpiresAt == nil || claims.ID == "" {
 		return &core.ErrorReturn{Err: errors.New("invalid token claims"), ErrorCode: authcore.ErrAuthLogoutFailed}
 	}
@@ -250,7 +266,9 @@ func (authService *AuthService) Logout(ctx context.Context, input types.LogoutIn
 	return nil
 }
 
-func (authService *AuthService) generateToken(ctx context.Context, tokenType enums.TokenType, user *models.User) (string, error) {
+func (authService *AuthService) generateToken(
+	ctx context.Context, tokenType enums.TokenType, user *models.User,
+) (string, error) {
 	configAuth := authService.AuthConfig
 	expiresAt := tokenExpiry(configAuth, tokenType)
 
@@ -285,12 +303,16 @@ func generatePassword(plainPassword string) ([]byte, error) {
 	return password, nil
 }
 
-func (authService *AuthService) VerifyToken(ctx context.Context, token string, tokenType enums.TokenType) (uint, error) {
+func (authService *AuthService) VerifyToken(ctx context.Context, token string, tokenType enums.TokenType) (
+	uint, error,
+) {
 	id, _, err := authService.VerifyTokenClaims(ctx, token, tokenType)
 	return id, err
 }
 
-func (authService *AuthService) VerifyTokenClaims(ctx context.Context, token string, tokenType enums.TokenType) (uint, *types.UserClaims, error) {
+func (authService *AuthService) VerifyTokenClaims(ctx context.Context, token string, tokenType enums.TokenType) (
+	uint, *types.UserClaims, error,
+) {
 	userId, claims, err := authService.parseTokenClaims(token, tokenType)
 	if err != nil {
 		return 0, nil, err
@@ -307,16 +329,20 @@ func (authService *AuthService) VerifyTokenClaims(ctx context.Context, token str
 	return userId, claims, nil
 }
 
-func (authService *AuthService) parseTokenClaims(token string, tokenType enums.TokenType) (uint, *types.UserClaims, error) {
+func (authService *AuthService) parseTokenClaims(token string, tokenType enums.TokenType) (
+	uint, *types.UserClaims, error,
+) {
 	configAuth := authService.AuthConfig
 	claims := &types.UserClaims{}
 
-	_, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (any, error) {
-		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-			return nil, errors.New("invalid signing method")
-		}
-		return []byte(configAuth.JWTSecretKey), nil
-	})
+	_, err := jwt.ParseWithClaims(
+		token, claims, func(token *jwt.Token) (any, error) {
+			if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+				return nil, errors.New("invalid signing method")
+			}
+			return []byte(configAuth.JWTSecretKey), nil
+		},
+	)
 	if err != nil || claims.Type != tokenType || claims.ExpiresAt == nil || claims.ID == "" {
 		return 0, nil, errors.New("not valid token parse")
 	}
@@ -333,7 +359,9 @@ func (authService *AuthService) GetUserById(ctx context.Context, id uint) (*mode
 	return authService.UserRepository.FindByID(ctx, id)
 }
 
-func (authService *AuthService) GenerateToken(ctx context.Context, tokenType enums.TokenType, user *models.User) (string, error) {
+func (authService *AuthService) GenerateToken(
+	ctx context.Context, tokenType enums.TokenType, user *models.User,
+) (string, error) {
 	return authService.generateToken(ctx, tokenType, user)
 }
 

@@ -51,8 +51,10 @@ type AssignRoleToUserRequest struct {
 }
 
 func (a AssignRoleToUserRequest) Validate(lang string) error {
-	return validation.ValidateStruct(&a,
-		validation.Field(&a.RoleIDs,
+	return validation.ValidateStruct(
+		&a,
+		validation.Field(
+			&a.RoleIDs,
 			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
 		),
 	)

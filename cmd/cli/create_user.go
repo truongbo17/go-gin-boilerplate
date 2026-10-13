@@ -51,15 +51,19 @@ func NewCreateUser(withDatabase WithDatabase) *cobra.Command {
 			if address.Address != email {
 				return errors.New("email must be a plain address")
 			}
-			return withDatabase(cmd, func(db *gorm.DB) error {
-				userService := services.NewUserService(authrepository.NewUserRepository(db))
-				return userService.CreateUser(cmd.Context(), types.ProvisionUserInput{
-					Username: username,
-					Email:    email,
-					Password: password,
-					Admin:    admin,
-				})
-			})
+			return withDatabase(
+				cmd, func(db *gorm.DB) error {
+					userService := services.NewUserService(authrepository.NewUserRepository(db))
+					return userService.CreateUser(
+						cmd.Context(), types.ProvisionUserInput{
+							Username: username,
+							Email:    email,
+							Password: password,
+							Admin:    admin,
+						},
+					)
+				},
+			)
 		},
 	}
 	cmd.Flags().StringP("username", "u", "", "username")

@@ -1,9 +1,10 @@
 package middlewares
 
 import (
+	"net/http"
+
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/models"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/services"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )

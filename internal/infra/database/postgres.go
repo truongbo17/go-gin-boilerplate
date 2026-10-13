@@ -34,10 +34,12 @@ func OpenPostgres(ctx context.Context, opts PostgresOptions) (*gorm.DB, error) {
 		return nil, errors.New("PostgreSQL pool durations cannot be negative")
 	}
 
-	db, err := gorm.Open(postgres.Open(opts.DSN), &gorm.Config{
-		SkipDefaultTransaction: true,
-		DisableAutomaticPing:   true,
-	})
+	db, err := gorm.Open(
+		postgres.Open(opts.DSN), &gorm.Config{
+			SkipDefaultTransaction: true,
+			DisableAutomaticPing:   true,
+		},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("connect PostgreSQL: %w", err)
 	}

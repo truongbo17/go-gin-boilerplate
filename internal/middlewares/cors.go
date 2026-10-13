@@ -1,9 +1,10 @@
 package middlewares
 
 import (
+	"strings"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"strings"
 )
 
 func CorsWith(patternAllowOrigin string) gin.HandlerFunc {
@@ -21,11 +22,18 @@ func CorsWith(patternAllowOrigin string) gin.HandlerFunc {
 		}
 	}
 
-	return cors.New(cors.Config{
-		AllowOrigins:     allowOrigin,
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Language", "X-Request-ID"},
-		ExposeHeaders:    []string{"Content-Length", "X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset", "Retry-After"},
-		AllowCredentials: false,
-	})
+	return cors.New(
+		cors.Config{
+			AllowOrigins: allowOrigin,
+			AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowHeaders: []string{
+				"Origin", "Content-Type", "Accept", "Authorization", "X-Language", "X-Request-ID",
+			},
+			ExposeHeaders: []string{
+				"Content-Length", "X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset",
+				"Retry-After",
+			},
+			AllowCredentials: false,
+		},
+	)
 }

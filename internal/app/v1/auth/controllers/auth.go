@@ -42,18 +42,22 @@ func (c *AuthController) Login(ctx *gin.Context) {
 	var loginRequest, _ = ctx.Get("LoginRequest")
 	requestBody, _ := loginRequest.(requests.LoginRequest)
 
-	token, err := c.AuthService.Login(ctxHandler, types.LoginInput{
-		Username: requestBody.Username,
-		Password: requestBody.Password,
-	})
+	token, err := c.AuthService.Login(
+		ctxHandler, types.LoginInput{
+			Username: requestBody.Username,
+			Password: requestBody.Password,
+		},
+	)
 	if err != nil {
 		responses.ReturnError(ctx, err)
 		return
 	}
 
-	response.ReturnSuccess(ctx, responses.LoginResponse{
-		AccessToken: token.AccessToken,
-	}, nil)
+	response.ReturnSuccess(
+		ctx, responses.LoginResponse{
+			AccessToken: token.AccessToken,
+		}, nil,
+	)
 	return
 }
 
@@ -72,10 +76,12 @@ func (c *AuthController) Logout(ctx *gin.Context) {
 	defer span.End()
 
 	user := ctx.MustGet("user").(*models.User)
-	err := c.AuthService.Logout(ctxHandler, types.LogoutInput{
-		User:  user,
-		Token: ctx.GetHeader(config.HeaderAuth),
-	})
+	err := c.AuthService.Logout(
+		ctxHandler, types.LogoutInput{
+			User:  user,
+			Token: ctx.GetHeader(config.HeaderAuth),
+		},
+	)
 	if err != nil {
 		responses.ReturnError(ctx, err)
 		return
@@ -99,13 +105,15 @@ func (c *AuthController) Me(ctx *gin.Context) {
 	defer span.End()
 
 	user := ctx.MustGet("user").(*models.User)
-	response.ReturnSuccess(ctx, responses.MeResponse{
-		Username:  user.Username,
-		Email:     user.Email,
-		Status:    user.Status,
-		CreateAt:  user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-	}, nil)
+	response.ReturnSuccess(
+		ctx, responses.MeResponse{
+			Username:  user.Username,
+			Email:     user.Email,
+			Status:    user.Status,
+			CreateAt:  user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
+		}, nil,
+	)
 	return
 }
 
@@ -117,13 +125,17 @@ func (c *AuthController) ChangePass(ctx *gin.Context) {
 	requestBody, _ := changePasswordRequest.(requests.ChangePasswordRequest)
 	user := ctx.MustGet("user").(*models.User)
 
-	accessToken, failure := c.AuthService.ChangePassword(ctxHandler, user, requestBody.OldPassword, requestBody.NewPassword)
+	accessToken, failure := c.AuthService.ChangePassword(
+		ctxHandler, user, requestBody.OldPassword, requestBody.NewPassword,
+	)
 	if failure != nil {
 		responses.ReturnError(ctx, failure)
 		return
 	}
 
-	response.ReturnSuccess(ctx, responses.LoginResponse{
-		AccessToken: accessToken,
-	}, nil)
+	response.ReturnSuccess(
+		ctx, responses.LoginResponse{
+			AccessToken: accessToken,
+		}, nil,
+	)
 }

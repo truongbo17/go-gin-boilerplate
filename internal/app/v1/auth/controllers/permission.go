@@ -43,11 +43,13 @@ func (c *PermissionController) ListPermissions(ctx *gin.Context) {
 	var listRequest, _ = ctx.Get("ListPermissionRequest")
 	requestBody, _ := listRequest.(requests.ListPermissionRequest)
 
-	permissions, err := c.PermissionService.ListPermissions(ctxHandler, types.ListPermissionsInput{
-		Search:  requestBody.Search,
-		Page:    requestBody.Page,
-		PerPage: requestBody.PerPage,
-	})
+	permissions, err := c.PermissionService.ListPermissions(
+		ctxHandler, types.ListPermissionsInput{
+			Search:  requestBody.Search,
+			Page:    requestBody.Page,
+			PerPage: requestBody.PerPage,
+		},
+	)
 	if err != nil {
 		responses.ReturnError(ctx, err)
 		return
@@ -55,14 +57,16 @@ func (c *PermissionController) ListPermissions(ctx *gin.Context) {
 
 	var permissionResponses []responses.PermissionResponse
 	for _, permission := range permissions.Items {
-		permissionResponses = append(permissionResponses, responses.PermissionResponse{
-			ID:          permission.ID,
-			Name:        permission.Name,
-			Slug:        permission.Slug,
-			Description: permission.Description,
-			CreatedAt:   permission.CreatedAt,
-			UpdatedAt:   permission.UpdatedAt,
-		})
+		permissionResponses = append(
+			permissionResponses, responses.PermissionResponse{
+				ID:          permission.ID,
+				Name:        permission.Name,
+				Slug:        permission.Slug,
+				Description: permission.Description,
+				CreatedAt:   permission.CreatedAt,
+				UpdatedAt:   permission.UpdatedAt,
+			},
+		)
 	}
 
 	response.ReturnSuccess(ctx, permissionResponses, response.PageMeta(ctx, *permissions))
@@ -86,24 +90,28 @@ func (c *PermissionController) CreatePermission(ctx *gin.Context) {
 	var createRequest, _ = ctx.Get("CreatePermissionRequest")
 	requestBody, _ := createRequest.(requests.CreatePermissionRequest)
 
-	permission, err := c.PermissionService.CreatePermission(ctxHandler, types.CreatePermissionInput{
-		Name:        requestBody.Name,
-		Slug:        requestBody.Slug,
-		Description: requestBody.Description,
-	})
+	permission, err := c.PermissionService.CreatePermission(
+		ctxHandler, types.CreatePermissionInput{
+			Name:        requestBody.Name,
+			Slug:        requestBody.Slug,
+			Description: requestBody.Description,
+		},
+	)
 	if err != nil {
 		responses.ReturnError(ctx, err)
 		return
 	}
 
-	response.ReturnSuccess(ctx, responses.PermissionResponse{
-		ID:          permission.ID,
-		Name:        permission.Name,
-		Slug:        permission.Slug,
-		Description: permission.Description,
-		CreatedAt:   permission.CreatedAt,
-		UpdatedAt:   permission.UpdatedAt,
-	}, nil)
+	response.ReturnSuccess(
+		ctx, responses.PermissionResponse{
+			ID:          permission.ID,
+			Name:        permission.Name,
+			Slug:        permission.Slug,
+			Description: permission.Description,
+			CreatedAt:   permission.CreatedAt,
+			UpdatedAt:   permission.UpdatedAt,
+		}, nil,
+	)
 }
 
 // UpdatePermission godoc
@@ -130,25 +138,29 @@ func (c *PermissionController) UpdatePermission(ctx *gin.Context) {
 	var updateRequest, _ = ctx.Get("UpdatePermissionRequest")
 	requestBody, _ := updateRequest.(requests.UpdatePermissionRequest)
 
-	permission, err := c.PermissionService.UpdatePermission(ctxHandler, types.UpdatePermissionInput{
-		ID:          id,
-		Name:        requestBody.Name,
-		Slug:        requestBody.Slug,
-		Description: requestBody.Description,
-	})
+	permission, err := c.PermissionService.UpdatePermission(
+		ctxHandler, types.UpdatePermissionInput{
+			ID:          id,
+			Name:        requestBody.Name,
+			Slug:        requestBody.Slug,
+			Description: requestBody.Description,
+		},
+	)
 	if err != nil {
 		responses.ReturnError(ctx, err)
 		return
 	}
 
-	response.ReturnSuccess(ctx, responses.PermissionResponse{
-		ID:          permission.ID,
-		Name:        permission.Name,
-		Slug:        permission.Slug,
-		Description: permission.Description,
-		CreatedAt:   permission.CreatedAt,
-		UpdatedAt:   permission.UpdatedAt,
-	}, nil)
+	response.ReturnSuccess(
+		ctx, responses.PermissionResponse{
+			ID:          permission.ID,
+			Name:        permission.Name,
+			Slug:        permission.Slug,
+			Description: permission.Description,
+			CreatedAt:   permission.CreatedAt,
+			UpdatedAt:   permission.UpdatedAt,
+		}, nil,
+	)
 }
 
 // DeletePermission godoc
@@ -171,9 +183,11 @@ func (c *PermissionController) DeletePermission(ctx *gin.Context) {
 		return
 	}
 
-	err := c.PermissionService.DeletePermission(ctxHandler, types.DeletePermissionInput{
-		ID: id,
-	})
+	err := c.PermissionService.DeletePermission(
+		ctxHandler, types.DeletePermissionInput{
+			ID: id,
+		},
+	)
 	if err != nil {
 		responses.ReturnError(ctx, err)
 		return

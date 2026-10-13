@@ -23,14 +23,17 @@ type RegisterRequest struct {
 }
 
 func (value RegisterRequest) Validate(lang string) error {
-	return validation.ValidateStruct(&value,
+	return validation.ValidateStruct(
+		&value,
 		validation.Field(&value.Username, required(lang), length(lang, 3, 50)),
-		validation.Field(&value.Email,
+		validation.Field(
+			&value.Email,
 			required(lang),
 			length(lang, 3, 100),
 			validation.By(func(input any) error { return plainEmail(lang, input) }),
 		),
-		validation.Field(&value.Password,
+		validation.Field(
+			&value.Password,
 			required(lang),
 			length(lang, 8, 64),
 			validation.By(func(input any) error { return strongPassword(lang, input) }),
@@ -43,8 +46,10 @@ type ForgotPasswordRequest struct {
 }
 
 func (value ForgotPasswordRequest) Validate(lang string) error {
-	return validation.ValidateStruct(&value,
-		validation.Field(&value.Email,
+	return validation.ValidateStruct(
+		&value,
+		validation.Field(
+			&value.Email,
 			required(lang),
 			length(lang, 3, 100),
 			validation.By(func(input any) error { return plainEmail(lang, input) }),
@@ -59,19 +64,25 @@ type ResetPasswordRequest struct {
 }
 
 func (value ResetPasswordRequest) Validate(lang string) error {
-	return validation.ValidateStruct(&value,
+	return validation.ValidateStruct(
+		&value,
 		validation.Field(&value.Token, required(lang), length(lang, 1, 2048)),
-		validation.Field(&value.NewPassword,
+		validation.Field(
+			&value.NewPassword,
 			required(lang),
 			length(lang, 8, 64),
 			validation.By(func(input any) error { return strongPassword(lang, input) }),
 		),
-		validation.Field(&value.ConfirmPassword, required(lang), validation.By(func(input any) error {
-			if input.(string) != value.NewPassword {
-				return errors.New(i18n.GetMessage(lang, "validation.password_mismatch", nil))
-			}
-			return nil
-		})),
+		validation.Field(
+			&value.ConfirmPassword, required(lang), validation.By(
+				func(input any) error {
+					if input.(string) != value.NewPassword {
+						return errors.New(i18n.GetMessage(lang, "validation.password_mismatch", nil))
+					}
+					return nil
+				},
+			),
+		),
 	)
 }
 
@@ -80,9 +91,13 @@ func required(lang string) validation.Rule {
 }
 
 func length(lang string, min, max int) validation.Rule {
-	return validation.Length(min, max).Error(i18n.GetMessage(lang, "validation.length", map[string]string{
-		"min": fmt.Sprint(min), "max": fmt.Sprint(max),
-	}))
+	return validation.Length(min, max).Error(
+		i18n.GetMessage(
+			lang, "validation.length", map[string]string{
+				"min": fmt.Sprint(min), "max": fmt.Sprint(max),
+			},
+		),
+	)
 }
 
 func plainEmail(lang string, input any) error {
@@ -148,13 +163,17 @@ func bindAuthRequest[T interface{ Validate(string) error }](key string) gin.Hand
 				ctx.AbortWithStatus(http.StatusRequestEntityTooLarge)
 				return
 			}
-			response.ReturnError(ctx, http.StatusUnprocessableEntity, core.ErrUnprocessableEntity,
-				i18n.GetMessage(ctx.GetString(config.HeaderLanguage), "error.422", nil), nil)
+			response.ReturnError(
+				ctx, http.StatusUnprocessableEntity, core.ErrUnprocessableEntity,
+				i18n.GetMessage(ctx.GetString(config.HeaderLanguage), "error.422", nil), nil,
+			)
 			return
 		}
 		if err := value.Validate(ctx.GetString(config.HeaderLanguage)); err != nil {
-			response.ReturnError(ctx, http.StatusUnprocessableEntity, core.ErrUnprocessableEntity,
-				i18n.GetMessage(ctx.GetString(config.HeaderLanguage), "error.422", nil), []string{err.Error()})
+			response.ReturnError(
+				ctx, http.StatusUnprocessableEntity, core.ErrUnprocessableEntity,
+				i18n.GetMessage(ctx.GetString(config.HeaderLanguage), "error.422", nil), []string{err.Error()},
+			)
 			return
 		}
 		ctx.Set(key, value)

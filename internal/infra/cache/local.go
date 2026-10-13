@@ -2,8 +2,9 @@ package cache
 
 import (
 	"context"
-	"github.com/patrickmn/go-cache"
 	"time"
+
+	"github.com/patrickmn/go-cache"
 )
 
 type Local struct {

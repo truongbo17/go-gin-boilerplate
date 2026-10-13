@@ -2,13 +2,14 @@ package requests
 
 import (
 	"errors"
+	"net/http"
+	"regexp"
+
 	"github.com/gin-gonic/gin"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/truongbo17/go-gin-boilerplate/config"
 	"github.com/truongbo17/go-gin-boilerplate/internal/i18n"
 	"github.com/truongbo17/go-gin-boilerplate/internal/request"
-	"net/http"
-	"regexp"
 )
 
 var (
@@ -24,11 +25,17 @@ type LoginRequest struct {
 }
 
 func (a LoginRequest) Validate(lang string) error {
-	return validation.ValidateStruct(&a,
+	return validation.ValidateStruct(
+		&a,
 		validation.Field(&a.Username, validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil))),
-		validation.Field(&a.Password,
+		validation.Field(
+			&a.Password,
 			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
-			validation.Length(8, 64).Error(i18n.GetMessage(lang, "validation.length", map[string]string{"min": "8", "max": "64"})),
+			validation.Length(8, 64).Error(
+				i18n.GetMessage(
+					lang, "validation.length", map[string]string{"min": "8", "max": "64"},
+				),
+			),
 		),
 	)
 }
@@ -59,27 +66,45 @@ type ChangePasswordRequest struct {
 }
 
 func (a ChangePasswordRequest) Validate(lang string) error {
-	return validation.ValidateStruct(&a,
-		validation.Field(&a.OldPassword,
+	return validation.ValidateStruct(
+		&a,
+		validation.Field(
+			&a.OldPassword,
 			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
 		),
-		validation.Field(&a.NewPassword,
+		validation.Field(
+			&a.NewPassword,
 			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
-			validation.Length(8, 64).Error(i18n.GetMessage(lang, "validation.length", map[string]string{"min": "8", "max": "64"})),
+			validation.Length(8, 64).Error(
+				i18n.GetMessage(
+					lang, "validation.length", map[string]string{"min": "8", "max": "64"},
+				),
+			),
 			validation.By(func(value any) error { return bcryptPasswordLength(lang, value) }),
-			validation.Match(uppercasePasswordPattern).Error(i18n.GetMessage(lang, "validation.password_uppercase", nil)),
-			validation.Match(lowercasePasswordPattern).Error(i18n.GetMessage(lang, "validation.password_lowercase", nil)),
+			validation.Match(uppercasePasswordPattern).Error(
+				i18n.GetMessage(
+					lang, "validation.password_uppercase", nil,
+				),
+			),
+			validation.Match(lowercasePasswordPattern).Error(
+				i18n.GetMessage(
+					lang, "validation.password_lowercase", nil,
+				),
+			),
 			validation.Match(digitPasswordPattern).Error(i18n.GetMessage(lang, "validation.password_digit", nil)),
 			validation.Match(specialPasswordPattern).Error(i18n.GetMessage(lang, "validation.password_special", nil)),
 		),
-		validation.Field(&a.ConfirmPassword,
+		validation.Field(
+			&a.ConfirmPassword,
 			validation.Required.Error(i18n.GetMessage(lang, "validation.required", nil)),
-			validation.By(func(value any) error {
-				if value.(string) != a.NewPassword {
-					return errors.New(i18n.GetMessage(lang, "validation.password_mismatch", nil))
-				}
-				return nil
-			}),
+			validation.By(
+				func(value any) error {
+					if value.(string) != a.NewPassword {
+						return errors.New(i18n.GetMessage(lang, "validation.password_mismatch", nil))
+					}
+					return nil
+				},
+			),
 		),
 	)
 }

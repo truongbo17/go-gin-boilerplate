@@ -2,12 +2,13 @@ package services
 
 import (
 	"context"
+	"strings"
+
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core"
 	authcore "github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/models"
 	"github.com/truongbo17/go-gin-boilerplate/internal/app/core/auth/types"
 	"github.com/truongbo17/go-gin-boilerplate/internal/page"
-	"strings"
 )
 
 type RoleService struct {
@@ -26,8 +27,12 @@ func NewRoleService(roleRepository RoleStore) RoleService {
 	return RoleService{RoleRepository: roleRepository}
 }
 
-func (rs *RoleService) ListRoles(ctx context.Context, input types.ListRolesInput) (*page.Result[models.Role], *core.ErrorReturn) {
-	roles, err := rs.RoleRepository.ListPage(ctx, page.Query{Number: input.Page, Size: input.PerPage, Search: input.Search})
+func (rs *RoleService) ListRoles(ctx context.Context, input types.ListRolesInput) (
+	*page.Result[models.Role], *core.ErrorReturn,
+) {
+	roles, err := rs.RoleRepository.ListPage(
+		ctx, page.Query{Number: input.Page, Size: input.PerPage, Search: input.Search},
+	)
 	if err != nil {
 		return nil, &core.ErrorReturn{
 			ErrorCode: authcore.ErrRoleInternalError,

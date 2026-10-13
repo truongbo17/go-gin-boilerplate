@@ -67,11 +67,13 @@ func openRuntime(ctx context.Context, needs requirements) (result *runtime, err 
 			return nil, startErr
 		}
 		if provider != nil {
-			r.close = append(r.close, func() error {
-				shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				defer cancel()
-				return provider.Shutdown(shutdownCtx)
-			})
+			r.close = append(
+				r.close, func() error {
+					shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+					defer cancel()
+					return provider.Shutdown(shutdownCtx)
+				},
+			)
 		}
 	}
 	if needs.database {
@@ -122,7 +124,9 @@ func withRuntime(cmd *cobra.Command, needs requirements, run func(*runtime) erro
 }
 
 func withDatabase(cmd *cobra.Command, run func(*gorm.DB) error) error {
-	return withRuntime(cmd, requirements{database: true}, func(r *runtime) error {
-		return run(r.db)
-	})
+	return withRuntime(
+		cmd, requirements{database: true}, func(r *runtime) error {
+			return run(r.db)
+		},
+	)
 }

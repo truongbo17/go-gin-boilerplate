@@ -48,10 +48,12 @@ func (l *Limiter) Limit(policy string, rate limiter.Rate) gin.HandlerFunc {
 	options := []mgin.Option{
 		mgin.WithKeyGetter(func(c *gin.Context) string { return policy + ":" + c.ClientIP() }),
 		mgin.WithLimitReachedHandler(limitReachedHandler),
-		mgin.WithErrorHandler(func(c *gin.Context, err error) {
-			_ = c.Error(err)
-			c.AbortWithStatus(http.StatusServiceUnavailable)
-		}),
+		mgin.WithErrorHandler(
+			func(c *gin.Context, err error) {
+				_ = c.Error(err)
+				c.AbortWithStatus(http.StatusServiceUnavailable)
+			},
+		),
 	}
 	return mgin.NewMiddleware(limiter.New(l.store, rate), options...)
 }

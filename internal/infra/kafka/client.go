@@ -66,7 +66,9 @@ func Ping(ctx context.Context, opts Options) error {
 	if err != nil {
 		return err
 	}
-	dialer := &kafkago.Dialer{Timeout: 3 * time.Second, TLS: tlsConfig, SASLMechanism: mechanism, ClientID: opts.ClientID}
+	dialer := &kafkago.Dialer{
+		Timeout: 3 * time.Second, TLS: tlsConfig, SASLMechanism: mechanism, ClientID: opts.ClientID,
+	}
 	for _, broker := range opts.Brokers {
 		conn, dialErr := dialer.DialContext(ctx, "tcp", broker)
 		if dialErr == nil {
@@ -104,8 +106,12 @@ func NewReader(opts Options, topic, groupID string) (*kafkago.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return kafkago.NewReader(kafkago.ReaderConfig{
-		Brokers: opts.Brokers, Topic: topic, GroupID: groupID,
-		Dialer: &kafkago.Dialer{Timeout: 3 * time.Second, TLS: tlsConfig, SASLMechanism: mechanism, ClientID: opts.ClientID},
-	}), nil
+	return kafkago.NewReader(
+		kafkago.ReaderConfig{
+			Brokers: opts.Brokers, Topic: topic, GroupID: groupID,
+			Dialer: &kafkago.Dialer{
+				Timeout: 3 * time.Second, TLS: tlsConfig, SASLMechanism: mechanism, ClientID: opts.ClientID,
+			},
+		},
+	), nil
 }
