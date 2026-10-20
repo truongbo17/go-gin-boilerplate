@@ -36,6 +36,7 @@ func (config *Config) validate() error {
 	err := validation.ValidateStruct(
 		config,
 		// App
+		validation.Field(&config.App.Name, validation.Required),
 		validation.Field(&config.App.Port, is.Port),
 
 		// CORS
@@ -68,6 +69,7 @@ func (config *Config) validate() error {
 func (config *Config) validateWorker() error {
 	if err := validation.ValidateStruct(
 		config,
+		validation.Field(&config.App.Name, validation.Required),
 		validation.Field(&config.App.Env, validation.In(DebugMode, ReleaseMode, LocalMode)),
 		validation.Field(&config.Cache.CacheStore, validation.In(CacheStoreRedis)),
 		validation.Field(&config.Cache.RedisHost, validation.Required, is.Host),

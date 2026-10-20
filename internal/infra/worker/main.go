@@ -10,12 +10,13 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 	"github.com/truongbo17/go-gin-boilerplate/config"
+	coreworker "github.com/truongbo17/go-gin-boilerplate/internal/app/core/worker"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
 )
 
-func StartWith(configRedis config.Cache, log *logrus.Logger, handlers map[string]asynq.HandlerFunc) (
+func StartWith(appName string, configRedis config.Cache, log *logrus.Logger, handlers map[string]asynq.HandlerFunc) (
 	*asynq.Server, error,
 ) {
 	srv := asynq.NewServer(
@@ -28,9 +29,9 @@ func StartWith(configRedis config.Cache, log *logrus.Logger, handlers map[string
 			Concurrency:     20,
 			ShutdownTimeout: 25 * time.Second,
 			Queues: map[string]int{
-				"critical": 6,
-				"default":  3,
-				"low":      1,
+				coreworker.QueueName(appName, coreworker.QueueCritical): 6,
+				coreworker.QueueName(appName, coreworker.QueueDefault):  3,
+				coreworker.QueueName(appName, coreworker.QueueLow):      1,
 			},
 			RetryDelayFunc: retryDelay,
 			Logger:         log,

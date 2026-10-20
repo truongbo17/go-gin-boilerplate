@@ -20,11 +20,12 @@ type JobClient interface {
 }
 
 type JobDispatcher struct {
-	client JobClient
+	client  JobClient
+	appName string
 }
 
-func New(client JobClient) *JobDispatcher {
-	return &JobDispatcher{client: client}
+func New(client JobClient, appName string) *JobDispatcher {
+	return &JobDispatcher{client: client, appName: appName}
 }
 
 func (dispatcher *JobDispatcher) Dispatch(ctx context.Context, taskType TaskType, params any) error {
@@ -35,13 +36,15 @@ func (dispatcher *JobDispatcher) Dispatch(ctx context.Context, taskType TaskType
 		if !ok || value.UserID == 0 {
 			return fmt.Errorf("invalid parameters for task %q", taskType)
 		}
-		options = []asynq.Option{asynq.Queue("default"), asynq.MaxRetry(5)}
+		options = []asynq.Option{asynq.Queue(QueueName(dispatcher.appName, QueueDefault)), asynq.MaxRetry(5)}
 	case TypePasswordResetEmail:
 		value, ok := params.(PasswordResetEmailParams)
 		if !ok || value.Email == "" {
 			return fmt.Errorf("invalid parameters for task %q", taskType)
 		}
-		options = []asynq.Option{asynq.Queue("critical"), asynq.MaxRetry(5), asynq.Unique(time.Minute)}
+		options = []asynq.Option{
+			asynq.Queue(QueueName(dispatcher.appName, QueueCritical)), asynq.MaxRetry(5), asynq.Unique(time.Minute),
+		}
 	default:
 		return fmt.Errorf("unknown task type %q", taskType)
 	}

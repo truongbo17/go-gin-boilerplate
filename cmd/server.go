@@ -45,7 +45,7 @@ func runServer(cmd *cobra.Command, r *runtime) error {
 		defer func(queue *asynq.Client) {
 			_ = queue.Close()
 		}(queue)
-		jobs = coreworker.New(queue)
+		jobs = coreworker.New(queue, r.config.App.Name)
 	}
 	router, err := routes.New(
 		routes.Options{

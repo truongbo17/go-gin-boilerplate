@@ -25,7 +25,7 @@ var StartWorkerCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			server, err := worker.StartWith(r.config.Cache, r.log, registry.Handlers)
+			server, err := worker.StartWith(r.config.App.Name, r.config.Cache, r.log, registry.Handlers)
 			if err != nil {
 				_ = scheduler.Shutdown()
 				return err
